@@ -15,7 +15,7 @@ jobs:
       - uses: subosito/flutter-action@v1
         with:
           channel: beta
-          flutter-version: '1.14.x'
+          flutter-version: '1.22.x'
       - run: flutter pub get
       - run: ./scripts/format.sh
       - run: flutter test
@@ -24,17 +24,19 @@ jobs:
     runs-on: macOS-latest
 
     steps:
-    - uses: malinskiy/action-android/install-sdk@release/0.0.5
+    # - uses: malinskiy/action-android/install-sdk@release/0.0.7
+    # Replaced with a fork because of this issue https://github.com/Malinskiy/action-android/issues/32
+    - uses: horie1024/action-android/install-sdk@release/0.0.9
     - uses: actions/checkout@v1
     - uses: subosito/flutter-action@v1
       with:
         channel: beta
-        flutter-version: '1.14.x'
+        flutter-version: '1.22.x'
     - name: Build example app
       working-directory: ./example
       run: "flutter pub get"
     - name: Use specific Java version for sdkmanager to work
-      uses: joschi/setup-jdk@v1
+      uses: joschi/setup-jdk@v2
       with:
         java-version: 'openjdk8'
         architecture: 'x64'
@@ -76,7 +78,7 @@ jobs:
     - uses: subosito/flutter-action@v1
       with:
         channel: beta
-        flutter-version: '1.14.x'
+        flutter-version: '1.22.x'
     - name: Build example app
       working-directory: ./example
       run: "flutter pub get"

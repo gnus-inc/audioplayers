@@ -2,6 +2,27 @@
 
 ## [next]
 
+## 0.17.3
+* Backport some code to old kt (for now)
+
+## 0.17.2
+* Fix macos compilation issue
+* Fix android for non-kotlin projects
+
+## 0.17.1
+* Use better algorithm for speed modulation on iOS
+* Extracted and refactored all the notifications code onto the new file
+* Add more checks and make sure notifcations code is not ran when it shouldn't
+* Add more useful info to the troubleshoot guide
+
+## 0.17.0
+- Swift conversion of the darwin code
+
+## 0.16.2
+- Overhauled our contributing guidelines
+- Improve docs around player state
+- Update dependencies versions
+
 ## 0.16.1
 - Fix Exception thrown when calling audioPlayer.dispose
 - Fix bug with AudioCache crash on iOS
