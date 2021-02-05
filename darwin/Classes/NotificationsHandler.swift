@@ -325,7 +325,7 @@ class NotificationsHandler {
         
         let positionTime = (changePositionEvent as! MPChangePlaybackPositionCommandEvent).positionTime
         log("changePlaybackPosition to %f", positionTime)
-        let newTime = toCMTime(millis: positionTime)
+        let newTime = CMTimeMakeWithSeconds(positionTime, preferredTimescale: Int32(NSEC_PER_SEC))
         player.seek(time: newTime)
         return MPRemoteCommandHandlerStatus.success
     }
