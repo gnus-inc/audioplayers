@@ -16,8 +16,16 @@ func toCMTime(millis: Int) -> CMTime {
     return toCMTime(millis: Float(millis))
 }
 
+func toCMTime(sec: Double) -> CMTime {
+    return toCMTime(sec: Float(sec))
+}
+
 func toCMTime(millis: Double) -> CMTime {
     return toCMTime(millis: Float(millis))
+}
+
+func toCMTime(sec: Float) -> CMTime {
+    return CMTimeMakeWithSeconds(Float64(sec), preferredTimescale: Int32(NSEC_PER_SEC))
 }
 
 func toCMTime(millis: Float) -> CMTime {
