@@ -24,6 +24,12 @@ class NotificationsHandler {
     init(reference: SwiftAudioplayersPlugin) {
         self.reference = reference
         self.initHeadlessService()
+
+        NotificationCenter.default
+            .addObserver(self,
+                         selector: #selector(handleSessionInterruption(notification:)),
+                         name: AVAudioSession.interruptionNotification,
+                         object: nil)
     }
     
     func initHeadlessService() {
@@ -331,4 +337,32 @@ class NotificationsHandler {
     }
     
     #endif
+
+    @objc private func handleSessionInterruption(notification: NSNotification) {
+        #if os(iOS)
+        guard let value = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: value),
+              let player = reference.lastPlayer() else {
+            return
+        }
+        
+        switch type {
+        case .began:
+            if !player.isPlaying { return }
+            
+            let playerState: String
+            if player.isPlaying {
+                player.pause()
+                playerState = "paused"
+            } else {
+                player.resume()
+                playerState = "playing"
+            }
+            reference.onNotificationPlayerStateChanged(playerId: player.playerId, isPlaying: player.isPlaying)
+            onNotificationBackgroundPlayerStateChanged(playerId: player.playerId, value: playerState)
+        default:
+            break
+        }
+        #endif
+    }
 }
