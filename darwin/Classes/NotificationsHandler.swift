@@ -249,7 +249,8 @@ class NotificationsHandler {
             togglePlayPauseCommand.isEnabled = true
             togglePlayPauseCommand.addTarget(handler: self.playOrPauseEvent)
             
-            // Radiko では seek, skip などはCMとのからみがあるので許可しないためコメントアウト
+            // Radiko では seek, skip はCMとのからみがあるので許可しないため無効にする
+            remoteCommandCenter?.changePlaybackPositionCommand.isEnabled = false
             // let changePlaybackPositionCommand = remoteCommandCenter!.changePlaybackPositionCommand
             // changePlaybackPositionCommand.isEnabled = true
             // changePlaybackPositionCommand.addTarget(handler: self.onChangePlaybackPositionCommand)
