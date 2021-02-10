@@ -249,11 +249,10 @@ class NotificationsHandler {
             togglePlayPauseCommand.isEnabled = true
             togglePlayPauseCommand.addTarget(handler: self.playOrPauseEvent)
             
-            if #available(iOS 9.1, *) {
-                let changePlaybackPositionCommand = remoteCommandCenter!.changePlaybackPositionCommand
-                changePlaybackPositionCommand.isEnabled = true
-                changePlaybackPositionCommand.addTarget(handler: self.onChangePlaybackPositionCommand)
-            }
+            // Radiko では seek, skip などはCMとのからみがあるので許可しないためコメントアウト
+            // let changePlaybackPositionCommand = remoteCommandCenter!.changePlaybackPositionCommand
+            // changePlaybackPositionCommand.isEnabled = true
+            // changePlaybackPositionCommand.addTarget(handler: self.onChangePlaybackPositionCommand)
         }
     }
     
