@@ -248,12 +248,14 @@ class NotificationsHandler {
             let togglePlayPauseCommand = remoteCommandCenter!.togglePlayPauseCommand
             togglePlayPauseCommand.isEnabled = true
             togglePlayPauseCommand.addTarget(handler: self.playOrPauseEvent)
-            
+
             // Radiko では seek, skip はCMとのからみがあるので許可しないため無効にする
-            remoteCommandCenter?.changePlaybackPositionCommand.isEnabled = false
-            // let changePlaybackPositionCommand = remoteCommandCenter!.changePlaybackPositionCommand
-            // changePlaybackPositionCommand.isEnabled = true
-            // changePlaybackPositionCommand.addTarget(handler: self.onChangePlaybackPositionCommand)
+            remoteCommandCenter?.changePlaybackPositionCommand.isEnabled = false            
+            // if #available(iOS 9.1, *) {
+            //     let changePlaybackPositionCommand = remoteCommandCenter!.changePlaybackPositionCommand
+            //     changePlaybackPositionCommand.isEnabled = true
+            //     changePlaybackPositionCommand.addTarget(handler: self.onChangePlaybackPositionCommand)
+            // }
         }
     }
     
