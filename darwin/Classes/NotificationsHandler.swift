@@ -113,7 +113,8 @@ class NotificationsHandler {
         duration: Int?,
         elapsedTime: Int,
         enablePreviousTrackButton: Bool?,
-        enableNextTrackButton: Bool?
+        enableNextTrackButton: Bool?,
+        enableChangePlaybackPosition: Bool
     ) {
         #if os(iOS)
         setNotificationForIos(
@@ -127,7 +128,8 @@ class NotificationsHandler {
             duration: duration,
             elapsedTime: elapsedTime,
             enablePreviousTrackButton: enablePreviousTrackButton,
-            enableNextTrackButton: enableNextTrackButton
+            enableNextTrackButton: enableNextTrackButton,
+            enableChangePlaybackPosition: enableChangePlaybackPosition
         )
         #else
         // not implemented for macos
@@ -202,7 +204,8 @@ class NotificationsHandler {
         duration: Int?,
         elapsedTime: Int,
         enablePreviousTrackButton: Bool?,
-        enableNextTrackButton: Bool?
+        enableNextTrackButton: Bool?,
+        enableChangePlaybackPosition: Bool
     ) {
         self.title = title
         self.albumTitle = albumTitle
@@ -248,11 +251,15 @@ class NotificationsHandler {
             let togglePlayPauseCommand = remoteCommandCenter!.togglePlayPauseCommand
             togglePlayPauseCommand.isEnabled = true
             togglePlayPauseCommand.addTarget(handler: self.playOrPauseEvent)
-            
+        
             if #available(iOS 9.1, *) {
-                let changePlaybackPositionCommand = remoteCommandCenter!.changePlaybackPositionCommand
-                changePlaybackPositionCommand.isEnabled = true
-                changePlaybackPositionCommand.addTarget(handler: self.onChangePlaybackPositionCommand)
+                if enableChangePlaybackPosition {
+                    let changePlaybackPositionCommand = remoteCommandCenter!.changePlaybackPositionCommand
+                    changePlaybackPositionCommand.isEnabled = true
+                    changePlaybackPositionCommand.addTarget(handler: self.onChangePlaybackPositionCommand)
+                } else {
+                    remoteCommandCenter?.changePlaybackPositionCommand.isEnabled = false
+                }
             }
         }
     }

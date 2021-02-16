@@ -230,6 +230,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             
             let enablePreviousTrackButton: Bool? = args["enablePreviousTrackButton"] as? Bool
             let enableNextTrackButton: Bool? = args["enableNextTrackButton"] as? Bool
+            let enableChangePlaybackPosition: Bool? = args["enableChangePlaybackPosition"] as? Bool
             
             guard let handler = notificationsHandler else {
                 result(FlutterMethodNotImplemented)
@@ -247,7 +248,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 duration: duration,
                 elapsedTime: elapsedTime!,
                 enablePreviousTrackButton: enablePreviousTrackButton,
-                enableNextTrackButton: enableNextTrackButton
+                enableNextTrackButton: enableNextTrackButton,
+                enableChangePlaybackPosition: enableChangePlaybackPosition ?? false
             )
         } else {
             log("Called not implemented method: %@", method)
