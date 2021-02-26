@@ -22,6 +22,8 @@ let AudioplayersPluginStop = NSNotification.Name("AudioplayersPluginStop")
 
 public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
     
+    private static let defaultBufferSeconds = 15
+    
     var registrar: FlutterPluginRegistrar
     var channel: FlutterMethodChannel
     var notificationsHandler: NotificationsHandler? = nil
@@ -126,6 +128,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             
             let isLocal: Bool = (args["isLocal"] as? Bool) ?? true
             let volume: Float = (args["volume"] as? Float) ?? 1.0
+            let bufferSeconds: Int = (args["bufferSeconds"] as? Int) ?? Self.defaultBufferSeconds
             
             // we might or might not want to seek
             let seekTimeMillis: Int? = (args["position"] as? Int)
@@ -140,7 +143,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 volume: volume,
                 time: seekTime,
                 isNotification: respectSilence,
-                recordingActive: recordingActive
+                recordingActive: recordingActive,
+                bufferSeconds: bufferSeconds
             )
         } else if method == "pause" {
             player.pause()
@@ -164,6 +168,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let isLocal: Bool = (args["isLocal"] as? Bool) ?? false
             let respectSilence: Bool = (args["respectSilence"] as? Bool) ?? false
             let recordingActive: Bool = (args["recordingActive"] as? Bool) ?? false
+            let bufferSeconds: Int = (args["bufferSeconds"] as? Int) ?? Self.defaultBufferSeconds
             
             if url == nil {
                 log("Null URL received on setUrl")
@@ -175,7 +180,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 url: url!,
                 isLocal: isLocal,
                 isNotification: respectSilence,
-                recordingActive: recordingActive
+                recordingActive: recordingActive,
+                bufferSeconds: bufferSeconds
             ) {
                 player in
                 result(1)
