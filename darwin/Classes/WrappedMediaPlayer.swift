@@ -210,6 +210,7 @@ class WrappedMediaPlayer {
         isLocal: Bool,
         isNotification: Bool,
         recordingActive: Bool,
+        bufferSeconds: Int,
         onReady: @escaping (AVPlayer) -> Void
     ) {
         reference.updateCategory(recordingActive: recordingActive, isNotification: isNotification, playingRoute: playingRoute)
@@ -219,6 +220,10 @@ class WrappedMediaPlayer {
             let parsedUrl = isLocal ? URL.init(fileURLWithPath: url) : URL.init(string: url)!
             let playerItem = AVPlayerItem.init(url: parsedUrl)
             playerItem.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.timeDomain
+            if #available(iOS 10.0, *) {
+                playerItem.preferredForwardBufferDuration = Double(bufferSeconds)
+            }
+            
             let player: AVPlayer
             if let existingPlayer = self.player {
                 keyVakueObservation?.invalidate()
@@ -286,7 +291,8 @@ class WrappedMediaPlayer {
         volume: Float,
         time: CMTime?,
         isNotification: Bool,
-        recordingActive: Bool
+        recordingActive: Bool,
+        bufferSeconds: Int
     ) {
         reference.updateCategory(recordingActive: recordingActive, isNotification: isNotification, playingRoute: playingRoute)
         
@@ -294,7 +300,8 @@ class WrappedMediaPlayer {
             url: url,
             isLocal: isLocal,
             isNotification: isNotification,
-            recordingActive: recordingActive
+            recordingActive: recordingActive,
+            bufferSeconds: bufferSeconds
         ) {
             player in
             player.volume = volume
