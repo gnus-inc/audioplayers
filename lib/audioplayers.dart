@@ -572,7 +572,7 @@ class AudioPlayer {
       'forwardSkipInterval': forwardSkipInterval.inSeconds,
       'backwardSkipInterval': backwardSkipInterval.inSeconds,
       'duration': duration.inSeconds,
-      'elapsedTime': elapsedTime.inSeconds,
+      'elapsedTime': elapsedTime.inMilliseconds,
       'hasPreviousTrack': hasPreviousTrack,
       'hasNextTrack': hasNextTrack
     });
