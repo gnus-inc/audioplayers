@@ -210,6 +210,7 @@ class WrappedMediaPlayer {
         isLocal: Bool,
         isNotification: Bool,
         recordingActive: Bool,
+        time: CMTime?,
         bufferSeconds: Int,
         onReady: @escaping (AVPlayer) -> Void
     ) {
@@ -223,7 +224,13 @@ class WrappedMediaPlayer {
             if #available(iOS 10.0, *) {
                 playerItem.preferredForwardBufferDuration = Double(bufferSeconds)
             }
-            
+
+            if let time = time {
+                playerItem.seek(to: time)
+            } else {
+                playerItem.seek(to: CMTime.zero)
+            }
+
             let player: AVPlayer
             if let existingPlayer = self.player {
                 keyVakueObservation?.invalidate()
@@ -280,6 +287,11 @@ class WrappedMediaPlayer {
             keyVakueObservation = newKeyValueObservation
         } else {
             if playbackStatus == .readyToPlay {
+                if let time = time {
+                    player!.seek(to: time)
+                } else {
+                    player!.seek(to: CMTime.zero)
+                }
                 onReady(player!)
             }
         }
@@ -301,13 +313,11 @@ class WrappedMediaPlayer {
             isLocal: isLocal,
             isNotification: isNotification,
             recordingActive: recordingActive,
+            time: time,
             bufferSeconds: bufferSeconds
         ) {
             player in
             player.volume = volume
-            if let time = time {
-                player.seek(to: time)
-            }
             self.resume()
         }
         
