@@ -591,8 +591,7 @@ class AudioPlayer {
       Duration position,
       bool respectSilence = false,
       bool recordingActive = false,
-      int bufferSeconds,
-      }) {
+      int bufferSeconds}) {
     isLocal = isLocalUrl(url);
     return _invokeMethod('setUrl', {
       'url': url,
