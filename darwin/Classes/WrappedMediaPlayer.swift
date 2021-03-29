@@ -12,7 +12,6 @@ class WrappedMediaPlayer {
     
     var observers: [TimeObserver]
     var keyVakueObservation: NSKeyValueObservation?
-    var bufferingObservation: NSKeyValueObservation?
 
     var isPlaying: Bool
     var playbackRate: Float
@@ -22,6 +21,7 @@ class WrappedMediaPlayer {
     var url: String?
     var onReady: ((AVPlayer) -> Void)?
     var initialSeek: CMTime?
+    var initialSeekFulfill: Int
     var initialSeekSentinel: Int
 
     init(
@@ -51,6 +51,7 @@ class WrappedMediaPlayer {
         self.looping = looping
         self.url = url
         self.onReady = onReady
+        self.initialSeekFulfill = 0
         self.initialSeekSentinel = 0
     }
     
@@ -204,12 +205,16 @@ class WrappedMediaPlayer {
 
     func achieveInitialSeek(_ time: CMTime) {
         guard let initialSeek = initialSeek else { return }
-
         if abs(time.seconds - initialSeek.seconds) < 20 {
-            self.initialSeek = nil
+            // Confirm only when it has fulfilled for 1 second.
+            initialSeekFulfill += 1
+            if (5 <= initialSeekFulfill) {
+                self.initialSeek = nil
+            }
             return
         }
 
+        initialSeekFulfill = 0
         player?.seek(to: initialSeek)
 
         initialSeekSentinel -= 1
@@ -248,6 +253,15 @@ class WrappedMediaPlayer {
             if #available(iOS 10.0, *) {
                 playerItem.preferredForwardBufferDuration = Double(bufferSeconds)
             }
+
+            initialSeekFulfill = 0
+            initialSeekSentinel = 3000 / 200 // 3sec / timeObserver's interval
+            if let time = time {
+                initialSeek = time
+            } else {
+                initialSeek = CMTime.zero
+            }
+            playerItem.seek(to: initialSeek!)
 
             let player: AVPlayer
             if let existingPlayer = self.player {
@@ -303,22 +317,6 @@ class WrappedMediaPlayer {
             
             keyVakueObservation?.invalidate()
             keyVakueObservation = newKeyValueObservation
-
-          if let time = time {
-              initialSeek = time
-          } else {
-              initialSeek = CMTime.zero
-          }
-          initialSeekSentinel = 3000 / 200 // 3sec / timeObserver's interval
-
-          bufferingObservation?.invalidate()
-          bufferingObservation = playerItem.observe(\AVPlayerItem.isPlaybackLikelyToKeepUp) { [weak self] (playerItem, change) in
-              if playerItem.isPlaybackLikelyToKeepUp {
-                  if let initialSeek = self?.initialSeek {
-                      self!.player!.seek(to: initialSeek)
-                  }
-              }
-          }
         } else {
             if playbackStatus == .readyToPlay {
                 if let time = time {
