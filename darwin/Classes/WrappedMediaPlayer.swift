@@ -321,6 +321,11 @@ class WrappedMediaPlayer {
           }
         } else {
             if playbackStatus == .readyToPlay {
+                if let time = time {
+                    player!.seek(to: time)
+                } else {
+                    player!.seek(to: CMTime.zero)
+                }
                 onReady(player!)
             }
         }
