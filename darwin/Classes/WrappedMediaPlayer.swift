@@ -12,7 +12,8 @@ class WrappedMediaPlayer {
     
     var observers: [TimeObserver]
     var keyVakueObservation: NSKeyValueObservation?
-    
+    var bufferingObservation: NSKeyValueObservation?
+
     var isPlaying: Bool
     var playbackRate: Float
     var volume: Float
@@ -20,7 +21,8 @@ class WrappedMediaPlayer {
     var looping: Bool
     var url: String?
     var onReady: ((AVPlayer) -> Void)?
-    
+    var initialSeek: CMTime?
+
     init(
         reference: SwiftAudioplayersPlugin,
         playerId: String,
@@ -191,7 +193,9 @@ class WrappedMediaPlayer {
         if reference.isDealloc {
             return
         }
-        let millis = fromCMTime(time: time)
+        // If the initial seeking has not done, use it
+        // to prevent notifying with a wrong position.
+        let millis = fromCMTime(time: initialSeek ?? time)
         reference.onCurrentPosition(playerId: playerId, millis: millis)
     }
     
@@ -223,12 +227,6 @@ class WrappedMediaPlayer {
             playerItem.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.timeDomain
             if #available(iOS 10.0, *) {
                 playerItem.preferredForwardBufferDuration = Double(bufferSeconds)
-            }
-
-            if let time = time {
-                playerItem.seek(to: time)
-            } else {
-                playerItem.seek(to: CMTime.zero)
             }
 
             let player: AVPlayer
@@ -285,6 +283,23 @@ class WrappedMediaPlayer {
             
             keyVakueObservation?.invalidate()
             keyVakueObservation = newKeyValueObservation
+
+          if let time = time {
+              initialSeek = time
+          } else {
+              initialSeek = CMTime.zero
+          }
+
+          bufferingObservation?.invalidate()
+          bufferingObservation = playerItem.observe(\AVPlayerItem.isPlaybackLikelyToKeepUp) { [weak self] (playerItem, change) in
+            if playerItem.isPlaybackLikelyToKeepUp {
+              if let initialSeek = self?.initialSeek {
+                self!.player!.seek(to: initialSeek)
+                self?.initialSeek = nil
+              }
+            }
+          }
+
         } else {
             if playbackStatus == .readyToPlay {
                 if let time = time {
