@@ -206,7 +206,7 @@ class WrappedMediaPlayer {
     func achieveInitialSeek(_ time: CMTime) {
         guard let initialSeek = initialSeek else { return }
         if abs(time.seconds - initialSeek.seconds) < 20 {
-            // Confirm only when it has fulfilled for 1 seconds.
+            // Confirm only when it has fulfilled for 1 second.
             initialSeekFulfill += 1
             if (5 <= initialSeekFulfill) {
                 self.initialSeek = nil
