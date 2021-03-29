@@ -170,6 +170,9 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let recordingActive: Bool = (args["recordingActive"] as? Bool) ?? false
             let bufferSeconds: Int = (args["bufferSeconds"] as? Int) ?? Self.defaultBufferSeconds
             
+            let seekTimeMillis: Int? = (args["position"] as? Int)
+            let seekTime: CMTime? = seekTimeMillis.map { toCMTime(millis: $0) }
+
             if url == nil {
                 log("Null URL received on setUrl")
                 result(0)
@@ -181,6 +184,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 isLocal: isLocal,
                 isNotification: respectSilence,
                 recordingActive: recordingActive,
+                time: seekTime,
                 bufferSeconds: bufferSeconds
             ) {
                 player in
