@@ -264,7 +264,7 @@ class WrappedMediaPlayer {
                 self.url = url
                 
                 // stream player position
-                let interval = toCMTime(millis: 0.2)
+                let interval = toCMTime(millis: 200)
                 let timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: nil) {
                     [weak self] time in
                     self!.onTimeInterval(time: time)
@@ -321,6 +321,11 @@ class WrappedMediaPlayer {
           }
         } else {
             if playbackStatus == .readyToPlay {
+                if let time = time {
+                    player!.seek(to: time)
+                } else {
+                    player!.seek(to: CMTime.zero)
+                }
                 onReady(player!)
             }
         }
