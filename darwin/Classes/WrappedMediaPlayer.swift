@@ -329,30 +329,10 @@ class WrappedMediaPlayer {
         }
     }
     
-    func play(
-        url: String,
-        isLocal: Bool,
-        volume: Float,
-        time: CMTime?,
-        isNotification: Bool,
-        recordingActive: Bool,
-        bufferSeconds: Int
-    ) {
-        reference.updateCategory(recordingActive: recordingActive, isNotification: isNotification, playingRoute: playingRoute)
-        
-        setUrl(
-            url: url,
-            isLocal: isLocal,
-            isNotification: isNotification,
-            recordingActive: recordingActive,
-            time: time,
-            bufferSeconds: bufferSeconds
-        ) {
-            player in
-            player.volume = volume
-            self.resume()
-        }
-        
+    func play(volume: Float) {
+        guard let player = player else { return }
+        player.volume = volume
+        self.resume()
         reference.lastPlayerId = playerId
     }
 }

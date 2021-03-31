@@ -119,9 +119,9 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             } else {
                 result(0)
             }
-        } else if method == "play" {
+        } else if method == "play" || method == "setUrl" {
             guard let url = args["url"] as! String? else {
-                log("Null url received on play")
+                log("Null url received on \(method)")
                 result(0)
                 return
             }
@@ -133,19 +133,25 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             // we might or might not want to seek
             let seekTimeMillis: Int? = (args["position"] as? Int)
             let seekTime: CMTime? = seekTimeMillis.map { toCMTime(millis: $0) }
-            
+
             let respectSilence: Bool = (args["respectSilence"] as? Bool) ?? false
             let recordingActive: Bool = (args["recordingActive"] as? Bool) ?? false
-            
-            player.play(
+
+            player.setUrl(
                 url: url,
                 isLocal: isLocal,
-                volume: volume,
-                time: seekTime,
                 isNotification: respectSilence,
                 recordingActive: recordingActive,
+                time: seekTime,
                 bufferSeconds: bufferSeconds
-            )
+            ) {
+                _ in
+                if method == "play" {
+                  player.play(volume: volume)
+                }
+                result(1)
+                return
+            }
         } else if method == "pause" {
             player.pause()
         } else if method == "resume" {
@@ -162,33 +168,6 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             } else {
                 log("Null position received on seek")
                 result(0)
-            }
-        } else if method == "setUrl" {
-            let url: String? = args["url"] as? String
-            let isLocal: Bool = (args["isLocal"] as? Bool) ?? false
-            let respectSilence: Bool = (args["respectSilence"] as? Bool) ?? false
-            let recordingActive: Bool = (args["recordingActive"] as? Bool) ?? false
-            let bufferSeconds: Int = (args["bufferSeconds"] as? Int) ?? Self.defaultBufferSeconds
-            
-            let seekTimeMillis: Int? = (args["position"] as? Int)
-            let seekTime: CMTime? = seekTimeMillis.map { toCMTime(millis: $0) }
-
-            if url == nil {
-                log("Null URL received on setUrl")
-                result(0)
-                return
-            }
-            
-            player.setUrl(
-                url: url!,
-                isLocal: isLocal,
-                isNotification: respectSilence,
-                recordingActive: recordingActive,
-                time: seekTime,
-                bufferSeconds: bufferSeconds
-            ) {
-                player in
-                result(1)
             }
         } else if method == "getDuration" {
             let duration = player.getDuration()
