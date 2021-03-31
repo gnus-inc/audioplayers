@@ -396,6 +396,9 @@ class AudioPlayer {
     bool duckAudio = false,
     bool recordingActive = false,
     int bufferSeconds,
+    bool followLiveWhilePaused,
+    bool waitForBufferFull,
+    int timeOffsetFromLive,
   }) async {
     isLocal ??= isLocalUrl(url);
     volume ??= 1.0;
@@ -412,6 +415,9 @@ class AudioPlayer {
       'duckAudio': duckAudio ?? false,
       'recordingActive': recordingActive ?? false,
       'bufferSeconds': bufferSeconds,
+      'followLiveWhilePaused': followLiveWhilePaused,
+      'waitForBufferFull': waitForBufferFull,
+      'timeOffsetFromLive': timeOffsetFromLive,
     });
 
     if (result == 1) {

@@ -16,13 +16,11 @@ class WrappedMediaPlayer {
     var isPlaying: Bool
     var playbackRate: Float
     var volume: Float
+    var waitForBufferFull: Bool
     var playingRoute: String
     var looping: Bool
     var url: String?
     var onReady: ((AVPlayer) -> Void)?
-    var initialSeek: CMTime?
-    var initialSeekFulfill: Int
-    var initialSeekSentinel: Int
 
     init(
         reference: SwiftAudioplayersPlugin,
@@ -47,12 +45,11 @@ class WrappedMediaPlayer {
         self.isPlaying = isPlaying
         self.playbackRate = playbackRate
         self.volume = volume
+        self.waitForBufferFull = false
         self.playingRoute = playingRoute
         self.looping = looping
         self.url = url
         self.onReady = onReady
-        self.initialSeekFulfill = 0
-        self.initialSeekSentinel = 0
     }
     
     func clearObservers() {
@@ -98,7 +95,7 @@ class WrappedMediaPlayer {
     
     func resume() {
         isPlaying = true
-        if #available(iOS 10.0, macOS 10.12, *) {
+        if #available(iOS 10.0, macOS 10.12, *), !waitForBufferFull {
             player?.playImmediately(atRate: playbackRate)
         } else {
             player?.play()
@@ -196,32 +193,8 @@ class WrappedMediaPlayer {
         if reference.isDealloc {
             return
         }
-        // If the initial seeking has not done, use it
-        // to prevent notifying with a wrong position.
-        let millis = fromCMTime(time: initialSeek ?? time)
-        achieveInitialSeek(time)
+        let millis = fromCMTime(time: time)
         reference.onCurrentPosition(playerId: playerId, millis: millis)
-    }
-
-    func achieveInitialSeek(_ time: CMTime) {
-        guard let initialSeek = initialSeek else { return }
-        if abs(time.seconds - initialSeek.seconds) < 20 {
-            // Confirm only when it has fulfilled for 1 second.
-            initialSeekFulfill += 1
-            if (5 <= initialSeekFulfill) {
-                self.initialSeek = nil
-            }
-            return
-        }
-
-        initialSeekFulfill = 0
-        player?.seek(to: initialSeek)
-
-        initialSeekSentinel -= 1
-        if (initialSeekSentinel <= 0) {
-            // Given up
-            self.initialSeek = nil
-        }
     }
 
     func updateDuration() {
@@ -240,28 +213,34 @@ class WrappedMediaPlayer {
         isNotification: Bool,
         recordingActive: Bool,
         time: CMTime?,
-        bufferSeconds: Int,
+        bufferSeconds: Int?,
+        followLiveWhilePaused: Bool,
+        waitForBufferFull: Bool,
+        timeOffsetFromLive: CMTime?,
         onReady: @escaping (AVPlayer) -> Void
     ) {
         reference.updateCategory(recordingActive: recordingActive, isNotification: isNotification, playingRoute: playingRoute)
         let playbackStatus = player?.currentItem?.status
+        self.waitForBufferFull = waitForBufferFull
         
         if self.url != url || playbackStatus == .failed || playbackStatus == nil {
             let parsedUrl = isLocal ? URL.init(fileURLWithPath: url) : URL.init(string: url)!
             let playerItem = AVPlayerItem.init(url: parsedUrl)
             playerItem.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.timeDomain
             if #available(iOS 10.0, *) {
-                playerItem.preferredForwardBufferDuration = Double(bufferSeconds)
-            }
+                if let bufferSeconds = bufferSeconds {
+                    playerItem.preferredForwardBufferDuration = Double(bufferSeconds)
 
-            initialSeekFulfill = 0
-            initialSeekSentinel = 3000 / 200 // 3sec / timeObserver's interval
-            if let time = time {
-                initialSeek = time
-            } else {
-                initialSeek = CMTime.zero
+                }
             }
-            playerItem.seek(to: initialSeek!)
+            if #available(iOS 13.0, *) {
+                if let timeOffsetFromLive = timeOffsetFromLive {
+                    playerItem.configuredTimeOffsetFromLive = timeOffsetFromLive
+                }
+            }
+            if #available(iOS 9.0, *) {
+                playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = followLiveWhilePaused
+            }
 
             let player: AVPlayer
             if let existingPlayer = self.player {
@@ -272,7 +251,7 @@ class WrappedMediaPlayer {
                 player = existingPlayer
             } else {
                 player = AVPlayer.init(playerItem: playerItem)
-                
+
                 self.player = player
                 self.observers = []
                 self.url = url
