@@ -312,9 +312,12 @@ class WrappedMediaPlayer {
         }
     }
     
-    func play(volume: Float) {
+    func play(volume: Float, time: CMTime?) {
         guard let player = player else { return }
         player.volume = volume
+        if let time = time {
+          player.seek(to: time)
+        }
         self.resume()
         reference.lastPlayerId = playerId
     }

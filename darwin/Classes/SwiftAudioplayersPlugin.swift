@@ -153,7 +153,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             ) {
                 _ in
                 if method == "play" {
-                  player.play(volume: volume)
+                  player.play(volume: volume, time: seekTime)
                 }
                 result(1)
                 return
