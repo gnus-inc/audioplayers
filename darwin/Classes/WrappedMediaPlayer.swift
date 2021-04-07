@@ -242,6 +242,10 @@ class WrappedMediaPlayer {
                 playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = followLiveWhilePaused
             }
 
+            if let time = time {
+              playerItem.seek(to: time)
+            }
+
             let player: AVPlayer
             if let existingPlayer = self.player {
                 keyVakueObservation?.invalidate()
