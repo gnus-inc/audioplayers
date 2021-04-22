@@ -192,7 +192,11 @@ class NotificationsHandler {
             }
         }
     }
-    
+
+    func clearNotificationForIos() {
+      UIApplication.shared.endReceivingRemoteControlEvents()
+    }
+
     func setNotificationForIos(
         playerId: String,
         title: String?,

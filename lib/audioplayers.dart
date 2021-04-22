@@ -557,6 +557,10 @@ class AudioPlayer {
     return _invokeMethod('setPlaybackRate', {'playbackRate': playbackRate});
   }
 
+  Future<void> clearNotification() {
+    return _invokeMethod('clearNotification');
+  }
+
   /// Sets the notification bar for lock screen and notification area in iOS for now.
   ///
   /// Specify atleast title

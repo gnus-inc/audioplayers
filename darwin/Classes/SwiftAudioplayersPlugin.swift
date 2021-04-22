@@ -212,7 +212,11 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             }
             self.setPlayingRoute(playerId: playerId, playingRoute: playingRoute)
         } else if method == "setNotification" {
-            log("setNotification called")
+            guard let handler = notificationsHandler else {
+                result(FlutterMethodNotImplemented)
+                return
+            }
+
             let title: String? = args["title"] as? String
             let albumTitle: String? = args["albumTitle"] as? String
             let artist: String? = args["artist"] as? String
@@ -227,10 +231,6 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let enableNextTrackButton: Bool? = args["enableNextTrackButton"] as? Bool
             let enableChangePlaybackPosition: Bool? = args["enableChangePlaybackPosition"] as? Bool
             
-            guard let handler = notificationsHandler else {
-                result(FlutterMethodNotImplemented)
-                return
-            }
             // TODO(luan) reconsider whether these params are optional or not + default values/errors
             handler.setNotification(
                 playerId: playerId,
@@ -246,6 +246,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 enableNextTrackButton: enableNextTrackButton,
                 enableChangePlaybackPosition: enableChangePlaybackPosition ?? false
             )
+        } else if method == "clearNotification" {
+            notificationsHandler?.clearNotificationForIos()
         } else {
             log("Called not implemented method: %@", method)
             result(FlutterMethodNotImplemented)
@@ -325,7 +327,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
         let options = isNotification ? AVAudioSession.CategoryOptions.mixWithOthers : []
         
         configureAudioSession(category: category, options: options)
-        if isNotification {
+        if !isNotification {
             UIApplication.shared.beginReceivingRemoteControlEvents()
         }
         #endif
