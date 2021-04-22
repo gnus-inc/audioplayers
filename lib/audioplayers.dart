@@ -78,6 +78,8 @@ enum PlayerMode {
 }
 
 enum PlayerControlCommand {
+  PLAY_TRACK,
+  PAUSE_TRACK,
   NEXT_TRACK,
   PREVIOUS_TRACK,
 }
@@ -683,6 +685,12 @@ class AudioPlayer {
         player._errorController.add(value);
         // ignore: deprecated_member_use_from_same_package
         player.errorHandler?.call(value);
+        break;
+      case 'audio.onGotPlayTrackCommand':
+        player._commandController.add(PlayerControlCommand.PLAY_TRACK);
+        break;
+      case 'audio.onGotPauseTrackCommand':
+        player._commandController.add(PlayerControlCommand.PAUSE_TRACK);
         break;
       case 'audio.onGotNextTrackCommand':
         player._commandController.add(PlayerControlCommand.NEXT_TRACK);

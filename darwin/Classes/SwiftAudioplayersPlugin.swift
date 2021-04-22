@@ -301,7 +301,15 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
     func onGotNextTrackCommand(playerId: String) {
         channel.invokeMethod("audio.onGotNextTrackCommand", arguments: ["playerId": playerId])
     }
-    
+
+    func onGotPlayTrackCommand(playerId: String) {
+        channel.invokeMethod("audio.onGotPlayTrackCommand", arguments: ["playerId": playerId])
+    }
+
+    func onGotPauseTrackCommand(playerId: String) {
+        channel.invokeMethod("audio.onGotPauseTrackCommand", arguments: ["playerId": playerId])
+    }
+
     func updateCategory(
         recordingActive: Bool,
         isNotification: Bool,

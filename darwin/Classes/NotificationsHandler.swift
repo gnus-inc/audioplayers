@@ -310,22 +310,20 @@ class NotificationsHandler {
         }
         
         // TODO(luan) incorporate this into WrappedMediaPlayer
-        let playerState: String
+//        let playerState: String
         if #available(iOS 10.0, *) {
             if (player.isPlaying) {
-                player.pause()
-                playerState = "paused"
+              reference.onGotPauseTrackCommand(playerId: player.playerId)
             } else {
-                player.resume()
-                playerState = "playing"
+              reference.onGotPlayTrackCommand(playerId: player.playerId)
             }
         } else {
             // No fallback on earlier versions
             return MPRemoteCommandHandlerStatus.commandFailed
         }
         
-        reference.onNotificationPlayerStateChanged(playerId: player.playerId, isPlaying: player.isPlaying)
-        onNotificationBackgroundPlayerStateChanged(playerId: player.playerId, value: playerState)
+//        reference.onNotificationPlayerStateChanged(playerId: player.playerId, isPlaying: player.isPlaying)
+//        onNotificationBackgroundPlayerStateChanged(playerId: player.playerId, value: playerState)
         
         return MPRemoteCommandHandlerStatus.success
         
