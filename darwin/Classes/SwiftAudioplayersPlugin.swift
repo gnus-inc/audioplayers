@@ -147,6 +147,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 isNotification: respectSilence,
                 recordingActive: recordingActive,
                 time: seekTime,
+                liveStreamStartTime: liveStreamStartTime,
                 bufferSeconds: bufferSeconds,
                 followLiveWhilePaused: followLiveWhilePaused,
                 waitForBufferFull: waitForBufferFull,
@@ -176,6 +177,10 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 log("Null position received on seek")
                 result(0)
             }
+        } else if method == "updateLiveStreamInfo" {
+            let liveStreamStartTime: Double? = (args["liveStreamStartTime"] as? Double)
+            player.setLiveStreamStartTime(liveStreamStartTime)
+            result(0)
         } else if method == "getDuration" {
             let duration = player.getDuration()
             result(duration)

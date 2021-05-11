@@ -21,6 +21,8 @@ class WrappedMediaPlayer {
     var looping: Bool
     var url: String?
     var onReady: ((AVPlayer) -> Void)?
+    var liveStreamStartTime: Double?
+    var notifiedLiveStreamStartPosition: Bool
 
     init(
         reference: SwiftAudioplayersPlugin,
@@ -50,6 +52,7 @@ class WrappedMediaPlayer {
         self.looping = looping
         self.url = url
         self.onReady = onReady
+        self.notifiedLiveStreamStartPosition = false
     }
     
     func clearObservers() {
@@ -81,7 +84,19 @@ class WrappedMediaPlayer {
         return player.currentTime()
     }
     
+    private func getLiveStreamPosition() -> Int? {
+      guard let liveStreamStartTime = liveStreamStartTime,
+         let programDateTime = getLiveStreamProgramDateTime(),
+         0 < liveStreamStartTime && 0 < programDateTime else {
+            return nil
+      }
+      return Int((programDateTime - liveStreamStartTime) * 1000)
+    }
+
     func getCurrentPosition() -> Int? {
+        if let position = getLiveStreamPosition() {
+          return position
+        }
         guard let time = getCurrentCMTime() else {
             return nil
         }
@@ -193,8 +208,24 @@ class WrappedMediaPlayer {
         if reference.isDealloc {
             return
         }
-        let millis = fromCMTime(time: time)
-        reference.onCurrentPosition(playerId: playerId, millis: millis)
+        if let position = getLiveStreamPosition() {
+          reference.onCurrentPosition(playerId: playerId, millis: position)
+          if !notifiedLiveStreamStartPosition {
+            notifiedLiveStreamStartPosition = true
+            reference.updateNotifications(player: self, time: toCMTime(millis: position))
+          }
+        } else {
+          let millis = fromCMTime(time: time)
+          reference.onCurrentPosition(playerId: playerId, millis: millis)
+        }
+    }
+
+    // Read current playback timestamp based on #EXT-X-PROGRAM-DATE-TIME value in HC-AAC stream.
+    func getLiveStreamProgramDateTime() -> Double? {
+      guard
+        let item = player?.currentItem,
+        let date = item.currentDate() else { return nil }
+      return date.timeIntervalSince1970;
     }
 
     func updateDuration() {
@@ -214,6 +245,7 @@ class WrappedMediaPlayer {
         recordingActive: Bool,
         time: CMTime?,
         bufferSeconds: Int?,
+        liveStreamStartTime: Double?,
         followLiveWhilePaused: Bool,
         waitForBufferFull: Bool,
         timeOffsetFromLive: CMTime?,
@@ -221,6 +253,7 @@ class WrappedMediaPlayer {
     ) {
         reference.updateCategory(recordingActive: recordingActive, isNotification: isNotification, playingRoute: playingRoute)
         let playbackStatus = player?.currentItem?.status
+        notifiedLiveStreamStartPosition = false
         self.waitForBufferFull = waitForBufferFull
         
         if self.url != url || playbackStatus == .failed || playbackStatus == nil {
@@ -290,6 +323,7 @@ class WrappedMediaPlayer {
                     self.updateDuration()
                     
                     if let onReady = self.onReady {
+                        self.liveStreamStartTime = liveStreamStartTime
                         self.onReady = nil
                         onReady(self.player!)
                     }
@@ -302,6 +336,7 @@ class WrappedMediaPlayer {
             keyVakueObservation = newKeyValueObservation
         } else {
             if playbackStatus == .readyToPlay {
+                self.liveStreamStartTime = liveStreamStartTime
                 if let time = time {
                     player!.seek(to: time)
                 } else {
@@ -320,5 +355,9 @@ class WrappedMediaPlayer {
         }
         self.resume()
         reference.lastPlayerId = playerId
+    }
+
+    func setLiveStreamStartTime(_ liveStreamStartTime: Double?) {
+      self.liveStreamStartTime = liveStreamStartTime
     }
 }

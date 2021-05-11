@@ -393,6 +393,7 @@ class AudioPlayer {
     double volume = 1.0,
     // position must be null by default to be compatible with radio streams
     Duration position,
+    double liveStreamStartTime,
     bool respectSilence = false,
     bool stayAwake = false,
     bool duckAudio = false,
@@ -412,6 +413,7 @@ class AudioPlayer {
       'isLocal': isLocal,
       'volume': volume,
       'position': position?.inMilliseconds,
+      'liveStreamStartTime': liveStreamStartTime ?? 0,
       'respectSilence': respectSilence ?? false,
       'stayAwake': stayAwake ?? false,
       'duckAudio': duckAudio ?? false,
@@ -427,6 +429,12 @@ class AudioPlayer {
     }
 
     return result;
+  }
+
+  Future<void> updateLiveStreamInfo({double liveStreamStartTime}) async {
+    await _invokeMethod('updateLiveStreamInfo', {
+      'liveStreamStartTime': liveStreamStartTime ?? 0,
+    });
   }
 
   /// Plays audio in the form of a byte array.
@@ -603,6 +611,7 @@ class AudioPlayer {
       Duration position,
       bool respectSilence = false,
       bool recordingActive = false,
+      double liveStreamStartTime,
       int bufferSeconds}) {
     isLocal = isLocalUrl(url);
     return _invokeMethod('setUrl', {
@@ -611,6 +620,7 @@ class AudioPlayer {
       'position': position?.inMilliseconds,
       'respectSilence': respectSilence ?? false,
       'recordingActive': recordingActive ?? false,
+      'liveStreamStartTime': liveStreamStartTime ?? 0,
       'bufferSeconds': bufferSeconds,
     });
   }
