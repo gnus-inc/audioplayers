@@ -393,31 +393,30 @@ class AudioPlayer {
     double volume = 1.0,
     // position must be null by default to be compatible with radio streams
     Duration position,
-    double liveStreamStartTime,
     bool respectSilence = false,
     bool stayAwake = false,
     bool duckAudio = false,
     bool recordingActive = false,
+    bool isLiveStream = false,
+    Duration elapsedTime,
     int bufferSeconds,
     bool followLiveWhilePaused,
     bool waitForBufferFull,
     int timeOffsetFromLive,
   }) async {
     isLocal ??= isLocalUrl(url);
-    volume ??= 1.0;
-    respectSilence ??= false;
-    stayAwake ??= false;
 
     final int result = await _invokeMethod('play', {
       'url': url,
       'isLocal': isLocal,
-      'volume': volume,
+      'volume': volume ?? 1.0,
       'position': position?.inMilliseconds,
-      'liveStreamStartTime': liveStreamStartTime ?? 0,
       'respectSilence': respectSilence ?? false,
       'stayAwake': stayAwake ?? false,
       'duckAudio': duckAudio ?? false,
       'recordingActive': recordingActive ?? false,
+      'isLiveStream': isLiveStream ?? false,
+      'elapsedTime': elapsedTime?.inMilliseconds,
       'bufferSeconds': bufferSeconds,
       'followLiveWhilePaused': followLiveWhilePaused,
       'waitForBufferFull': waitForBufferFull,
@@ -431,9 +430,9 @@ class AudioPlayer {
     return result;
   }
 
-  Future<void> updateLiveStreamInfo({double liveStreamStartTime}) async {
+  Future<void> updateLiveStreamInfo({Duration elapsedTime}) async {
     await _invokeMethod('updateLiveStreamInfo', {
-      'liveStreamStartTime': liveStreamStartTime ?? 0,
+      'elapsedTime': elapsedTime?.inMilliseconds,
     });
   }
 
@@ -611,7 +610,8 @@ class AudioPlayer {
       Duration position,
       bool respectSilence = false,
       bool recordingActive = false,
-      double liveStreamStartTime,
+      bool isLiveStream = false,
+      Duration elapsedTime,
       int bufferSeconds}) {
     isLocal = isLocalUrl(url);
     return _invokeMethod('setUrl', {
@@ -620,7 +620,8 @@ class AudioPlayer {
       'position': position?.inMilliseconds,
       'respectSilence': respectSilence ?? false,
       'recordingActive': recordingActive ?? false,
-      'liveStreamStartTime': liveStreamStartTime ?? 0,
+      'isLiveStream': isLiveStream ?? false,
+      'elapsedTime': elapsedTime?.inMilliseconds,
       'bufferSeconds': bufferSeconds,
     });
   }
