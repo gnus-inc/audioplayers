@@ -137,6 +137,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let seekTimeMillis: Int? = (args["position"] as? Int)
             let seekTime: CMTime? = seekTimeMillis.map { toCMTime(millis: $0) }
 
+            let liveStreamStartTime: Double? = (args["liveStreamStartTime"] as? Double)
             let respectSilence: Bool = (args["respectSilence"] as? Bool) ?? false
             let recordingActive: Bool = (args["recordingActive"] as? Bool) ?? false
 
