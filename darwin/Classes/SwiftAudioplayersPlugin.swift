@@ -140,6 +140,9 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let respectSilence: Bool = (args["respectSilence"] as? Bool) ?? false
             let recordingActive: Bool = (args["recordingActive"] as? Bool) ?? false
 
+            if method == "setUrl" && player.isPlaying {
+                player.pause()
+            }
             player.setUrl(
                 url: url,
                 isLocal: isLocal,
