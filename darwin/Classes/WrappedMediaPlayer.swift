@@ -21,8 +21,7 @@ class WrappedMediaPlayer {
     var looping: Bool
     var url: String?
     var onReady: ((AVPlayer) -> Void)?
-    var isLiveStream: Bool
-    var elapsedTime: Int
+    var baseTime: Int? // timestamp in seconds
 
     init(
         reference: SwiftAudioplayersPlugin,
@@ -52,8 +51,6 @@ class WrappedMediaPlayer {
         self.looping = looping
         self.url = url
         self.onReady = onReady
-        self.isLiveStream = false
-        self.elapsedTime = 0
     }
     
     func clearObservers() {
@@ -86,10 +83,15 @@ class WrappedMediaPlayer {
     }
     
     func getCurrentPosition() -> Int? {
+        if let baseTime = baseTime,
+           let position = getLiveStreamProgramDateTime() {
+            return Int(position * 1000) - baseTime * 1000
+        }
+
         guard let time = getCurrentCMTime() else {
             return nil
         }
-        return fromCMTime(time: time) + elapsedTime
+        return fromCMTime(time: time)
     }
     
     func pause() {
@@ -127,6 +129,8 @@ class WrappedMediaPlayer {
         guard let currentItem = player?.currentItem else {
             return
         }
+
+      print("seek \(CMTimeGetSeconds(time))")
         // TODO(luan) currently when you seek, the play auto-unpuses. this should set a seekTo property, similar to what WrappedMediaPlayer
         currentItem.seek(to: time) {
             finished in
@@ -168,8 +172,7 @@ class WrappedMediaPlayer {
     
     func stop() {
         pause()
-        isPlaying = false
-        seek(time: toCMTime(millis: 0))
+//        seek(time: toCMTime(millis: 0))
     }
     
     func release() {
@@ -197,8 +200,16 @@ class WrappedMediaPlayer {
         if reference.isDealloc {
             return
         }
-        let millis = fromCMTime(time: time)
-        reference.onCurrentPosition(playerId: playerId, millis: millis + elapsedTime)
+
+        let millis = { () -> Int in
+            if let baseTime = baseTime,
+               let position = getLiveStreamProgramDateTime() {
+                return Int(position * 1000) - baseTime * 1000
+            }
+            return fromCMTime(time: time)
+        }()
+
+        reference.onCurrentPosition(playerId: playerId, millis: millis)
     }
 
     // Read current playback timestamp based on #EXT-X-PROGRAM-DATE-TIME value in HC-AAC stream.
@@ -224,9 +235,8 @@ class WrappedMediaPlayer {
         isLocal: Bool,
         isNotification: Bool,
         recordingActive: Bool,
-        isLiveStream: Bool,
-        elapsedTime: Int,
         time: CMTime?,
+        baseTime: Int?,
         bufferSeconds: Int?,
         followLiveWhilePaused: Bool,
         waitForBufferFull: Bool,
@@ -295,8 +305,7 @@ class WrappedMediaPlayer {
             
             // is sound ready
             self.onReady = onReady
-            self.isLiveStream = isLiveStream
-            self.elapsedTime = elapsedTime
+            self.baseTime = baseTime
             let newKeyValueObservation = playerItem.observe(\AVPlayerItem.status) { (playerItem, change) in
                 let status = playerItem.status
                 log("player status: %@ change: %@", status, change)
@@ -317,8 +326,7 @@ class WrappedMediaPlayer {
             keyVakueObservation?.invalidate()
             keyVakueObservation = newKeyValueObservation
         } else {
-            self.isLiveStream = isLiveStream
-            self.elapsedTime = elapsedTime
+            self.baseTime = baseTime
             if playbackStatus == .readyToPlay {
                 if let time = time {
                     player!.seek(to: time)
@@ -340,12 +348,7 @@ class WrappedMediaPlayer {
         reference.lastPlayerId = playerId
     }
 
-    func updateLiveStreamInfo(elapsedTime: Int) {
-        guard let position = getCurrentPosition() else {
-            self.elapsedTime = elapsedTime
-            return
-        }
-        // Adjust the elapsedTime field.
-        self.elapsedTime = position - elapsedTime
+    func updateLiveStreamInfo(baseTime: Int?) {
+        self.baseTime = baseTime
     }
 }

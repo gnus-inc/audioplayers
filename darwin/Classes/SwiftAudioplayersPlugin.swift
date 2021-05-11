@@ -140,8 +140,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let respectSilence: Bool = (args["respectSilence"] as? Bool) ?? false
             let recordingActive: Bool = (args["recordingActive"] as? Bool) ?? false
 
-            let isLiveStream: Bool = (args["isLiveStream"] as? Bool) ?? false
-            let elapsedTime: Int = (args["elapsedTime"] as? Int) ?? 0
+            let baseTime: Int? = (args["baseTime"] as? Int)
 
             player.setUrl(
                 url: url,
@@ -149,8 +148,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 isNotification: respectSilence,
                 recordingActive: recordingActive,
                 time: seekTime,
-                isLiveStream: isLiveStream,
-                elapsedTime: elapsedTime,
+                baseTime: baseTime,
                 bufferSeconds: bufferSeconds,
                 followLiveWhilePaused: followLiveWhilePaused,
                 waitForBufferFull: waitForBufferFull,
@@ -181,8 +179,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 result(0)
             }
         } else if method == "updateLiveStreamInfo" {
-            let elapsedTime: Int = (args["elapsedTime"] as? Int) ?? 0
-            player.updateLiveStreamInfo(elapsedTime: elapsedTime)
+            let baseTime: Int? = (args["baseTime"] as? Int)
+            player.updateLiveStreamInfo(baseTime: baseTime)
             result(0)
         } else if method == "getDuration" {
             let duration = player.getDuration()

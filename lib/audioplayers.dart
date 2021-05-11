@@ -397,8 +397,7 @@ class AudioPlayer {
     bool stayAwake = false,
     bool duckAudio = false,
     bool recordingActive = false,
-    bool isLiveStream = false,
-    Duration elapsedTime,
+    DateTime baseTime,
     int bufferSeconds,
     bool followLiveWhilePaused,
     bool waitForBufferFull,
@@ -415,8 +414,8 @@ class AudioPlayer {
       'stayAwake': stayAwake ?? false,
       'duckAudio': duckAudio ?? false,
       'recordingActive': recordingActive ?? false,
-      'isLiveStream': isLiveStream ?? false,
-      'elapsedTime': elapsedTime?.inMilliseconds,
+      'baseTime': baseTime == null ? null : baseTime.millisecondsSinceEpoch /
+          1000,
       'bufferSeconds': bufferSeconds,
       'followLiveWhilePaused': followLiveWhilePaused,
       'waitForBufferFull': waitForBufferFull,
@@ -430,9 +429,10 @@ class AudioPlayer {
     return result;
   }
 
-  Future<void> updateLiveStreamInfo({Duration elapsedTime}) async {
+  Future<void> updateLiveStreamInfo({DateTime baseTime}) async {
     await _invokeMethod('updateLiveStreamInfo', {
-      'elapsedTime': elapsedTime?.inMilliseconds,
+      'baseTime': baseTime == null ? null : baseTime.millisecondsSinceEpoch /
+          1000,
     });
   }
 
@@ -591,7 +591,7 @@ class AudioPlayer {
       'forwardSkipInterval': forwardSkipInterval.inSeconds,
       'backwardSkipInterval': backwardSkipInterval.inSeconds,
       'duration': duration.inSeconds,
-      'elapsedTime': elapsedTime.inMilliseconds,
+      'elapsedTime': elapsedTime.inSeconds,
       'hasPreviousTrack': hasPreviousTrack,
       'hasNextTrack': hasNextTrack
     });
@@ -610,8 +610,7 @@ class AudioPlayer {
       Duration position,
       bool respectSilence = false,
       bool recordingActive = false,
-      bool isLiveStream = false,
-      Duration elapsedTime,
+      DateTime baseTime,
       int bufferSeconds}) {
     isLocal = isLocalUrl(url);
     return _invokeMethod('setUrl', {
@@ -620,8 +619,8 @@ class AudioPlayer {
       'position': position?.inMilliseconds,
       'respectSilence': respectSilence ?? false,
       'recordingActive': recordingActive ?? false,
-      'isLiveStream': isLiveStream ?? false,
-      'elapsedTime': elapsedTime?.inMilliseconds,
+      'baseTime': baseTime == null ? null : baseTime.millisecondsSinceEpoch /
+          1000,
       'bufferSeconds': bufferSeconds,
     });
   }
