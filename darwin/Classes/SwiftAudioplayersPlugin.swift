@@ -154,6 +154,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 _ in
                 if method == "play" {
                   player.play(volume: volume, time: seekTime)
+                } else if method == "setUrl" && player.isPlaying {
+                    player.pause()
                 }
                 result(1)
                 return
