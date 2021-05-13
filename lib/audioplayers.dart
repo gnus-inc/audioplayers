@@ -398,10 +398,11 @@ class AudioPlayer {
     bool duckAudio = false,
     bool recordingActive = false,
     DateTime baseTime,
-    int bufferSeconds,
+    Duration elapsedTime,
+    Duration timeOffsetFromLive,
+    Duration buffer,
     bool followLiveWhilePaused,
     bool waitForBufferFull,
-    int timeOffsetFromLive,
   }) async {
     isLocal ??= isLocalUrl(url);
 
@@ -416,10 +417,13 @@ class AudioPlayer {
       'recordingActive': recordingActive ?? false,
       'baseTime': baseTime == null ? null : baseTime.millisecondsSinceEpoch /
           1000,
-      'bufferSeconds': bufferSeconds,
+      'elapsedTime': elapsedTime?.inMilliseconds,
+      'timeOffsetFromLive': timeOffsetFromLive == null
+          ? null
+          : timeOffsetFromLive.inMilliseconds / 1000,
+      'bufferSeconds': buffer?.inSeconds,
       'followLiveWhilePaused': followLiveWhilePaused,
       'waitForBufferFull': waitForBufferFull,
-      'timeOffsetFromLive': timeOffsetFromLive,
     });
 
     if (result == 1) {
@@ -429,10 +433,14 @@ class AudioPlayer {
     return result;
   }
 
-  Future<void> updateLiveStreamInfo({DateTime baseTime}) async {
+  Future<void> updateLiveStreamInfo({
+    DateTime baseTime,
+    Duration elapsedTime,
+  }) async {
     await _invokeMethod('updateLiveStreamInfo', {
       'baseTime': baseTime == null ? null : baseTime.millisecondsSinceEpoch /
           1000,
+      'elapsedTime': elapsedTime?.inMilliseconds
     });
   }
 
@@ -611,7 +619,10 @@ class AudioPlayer {
       bool respectSilence = false,
       bool recordingActive = false,
       DateTime baseTime,
-      int bufferSeconds}) {
+      Duration elapsedTime,
+      Duration timeOffsetFromLive,
+      Duration buffer,
+      }) {
     isLocal = isLocalUrl(url);
     return _invokeMethod('setUrl', {
       'url': url,
@@ -621,7 +632,11 @@ class AudioPlayer {
       'recordingActive': recordingActive ?? false,
       'baseTime': baseTime == null ? null : baseTime.millisecondsSinceEpoch /
           1000,
-      'bufferSeconds': bufferSeconds,
+      'elapsedTime': elapsedTime?.inMilliseconds,
+      'timeOffsetFromLive': timeOffsetFromLive == null
+          ? null
+          : timeOffsetFromLive.inMilliseconds / 1000,
+      'bufferSeconds': buffer?.inSeconds,
     });
   }
 

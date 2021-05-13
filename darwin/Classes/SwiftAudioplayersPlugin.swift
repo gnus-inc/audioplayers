@@ -128,8 +128,6 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let volume: Float = (args["volume"] as? Float) ?? 1.0
             let bufferSeconds = args["bufferSeconds"] as? Int
 
-            let timeOffsetFromLiveMillis = args["timeOffsetFromLive"] as? Float
-            let timeOffsetFromLive = timeOffsetFromLiveMillis.map { toCMTime(millis: $0) }
             let followLiveWhilePaused = (args["isLocal"] as? Bool) ?? false
             let waitForBufferFull = true // (args["waitForBufferFull"] as? Bool) ?? true
 
@@ -141,6 +139,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let recordingActive: Bool = (args["recordingActive"] as? Bool) ?? false
 
             let baseTime: Int? = (args["baseTime"] as? Int)
+            let elapsedTime = (args["elapsedTime"] as? Float).map { toCMTime(millis: $0) }
+            let timeOffsetFromLive = (args["timeOffsetFromLive"] as? Float).map { toCMTime(sec: $0) }
 
             player.setUrl(
                 url: url,
@@ -149,10 +149,11 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 recordingActive: recordingActive,
                 time: seekTime,
                 baseTime: baseTime,
+                elapsedTime: elapsedTime,
+                timeOffsetFromLive: timeOffsetFromLive,
                 bufferSeconds: bufferSeconds,
                 followLiveWhilePaused: followLiveWhilePaused,
-                waitForBufferFull: waitForBufferFull,
-                timeOffsetFromLive: timeOffsetFromLive
+                waitForBufferFull: waitForBufferFull
             ) {
                 _ in
                 if method == "play" {
@@ -180,7 +181,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             }
         } else if method == "updateLiveStreamInfo" {
             let baseTime: Int? = (args["baseTime"] as? Int)
-            player.updateLiveStreamInfo(baseTime: baseTime)
+            let elapsedTime = (args["elapsedTime"] as? Float).map { toCMTime(millis: $0) }
+            player.updateLiveStreamInfo(baseTime: baseTime, elapsedTime: elapsedTime)
             result(0)
         } else if method == "getDuration" {
             let duration = player.getDuration()

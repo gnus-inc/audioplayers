@@ -22,6 +22,7 @@ class WrappedMediaPlayer {
     var url: String?
     var onReady: ((AVPlayer) -> Void)?
     var baseTime: Int? // timestamp in seconds
+    var elapsedTime: CMTime?
 
     init(
         reference: SwiftAudioplayersPlugin,
@@ -129,8 +130,6 @@ class WrappedMediaPlayer {
         guard let currentItem = player?.currentItem else {
             return
         }
-
-      print("seek \(CMTimeGetSeconds(time))")
         // TODO(luan) currently when you seek, the play auto-unpuses. this should set a seekTo property, similar to what WrappedMediaPlayer
         currentItem.seek(to: time) {
             finished in
@@ -206,6 +205,9 @@ class WrappedMediaPlayer {
                let position = getLiveStreamProgramDateTime() {
                 return Int(position * 1000) - baseTime * 1000
             }
+            if let elapsedTime = elapsedTime {
+              return fromCMTime(time: time) + fromCMTime(time: elapsedTime)
+            }
             return fromCMTime(time: time)
         }()
 
@@ -237,10 +239,11 @@ class WrappedMediaPlayer {
         recordingActive: Bool,
         time: CMTime?,
         baseTime: Int?,
+        elapsedTime: CMTime?,
+        timeOffsetFromLive: CMTime?,
         bufferSeconds: Int?,
         followLiveWhilePaused: Bool,
         waitForBufferFull: Bool,
-        timeOffsetFromLive: CMTime?,
         onReady: @escaping (AVPlayer) -> Void
     ) {
         reference.updateCategory(recordingActive: recordingActive, isNotification: isNotification, playingRoute: playingRoute)
@@ -306,6 +309,7 @@ class WrappedMediaPlayer {
             // is sound ready
             self.onReady = onReady
             self.baseTime = baseTime
+            self.elapsedTime = elapsedTime
             let newKeyValueObservation = playerItem.observe(\AVPlayerItem.status) { (playerItem, change) in
                 let status = playerItem.status
                 log("player status: %@ change: %@", status, change)
@@ -327,6 +331,7 @@ class WrappedMediaPlayer {
             keyVakueObservation = newKeyValueObservation
         } else {
             self.baseTime = baseTime
+            self.elapsedTime = elapsedTime
             if playbackStatus == .readyToPlay {
                 if let time = time {
                     player!.seek(to: time)
@@ -348,7 +353,8 @@ class WrappedMediaPlayer {
         reference.lastPlayerId = playerId
     }
 
-    func updateLiveStreamInfo(baseTime: Int?) {
+    func updateLiveStreamInfo(baseTime: Int?, elapsedTime: CMTime?) {
         self.baseTime = baseTime
+        self.elapsedTime = elapsedTime
     }
 }
