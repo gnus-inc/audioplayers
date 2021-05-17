@@ -316,6 +316,9 @@ class WrappedMediaPlayer {
                 
                 // Do something with the status...
                 if status == .readyToPlay {
+                    let isLiveStream = CMTIME_IS_INDEFINITE(playerItem.duration)
+                    self.reference.onSeekable(playerId: self.playerId, seekable: !isLiveStream)
+
                     self.updateDuration()
                     
                     if let onReady = self.onReady {

@@ -300,7 +300,11 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
     func onDuration(playerId: String, millis: Int) {
         channel.invokeMethod("audio.onDuration", arguments: ["playerId": playerId, "value": millis])
     }
-    
+
+    func onSeekable(playerId: String, seekable: Bool) {
+        channel.invokeMethod("audio.onSeekable", arguments: ["playerId": playerId, "value": seekable])
+    }
+
     func onNotificationPlayerStateChanged(playerId: String, isPlaying: Bool) {
         channel.invokeMethod("audio.onNotificationPlayerStateChanged", arguments: ["playerId": playerId, "value": isPlaying])
     }

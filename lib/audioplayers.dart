@@ -161,6 +161,9 @@ class AudioPlayer {
   final StreamController<Duration> _durationController =
       StreamController<Duration>.broadcast();
 
+  final StreamController<bool> _seekableController =
+    StreamController<bool>.broadcast();
+
   final StreamController<void> _completionController =
       StreamController<void>.broadcast();
 
@@ -225,6 +228,9 @@ class AudioPlayer {
   /// An event is going to be sent as soon as the audio duration is available
   /// (it might take a while to download or buffer it).
   Stream<Duration> get onDurationChanged => _durationController.stream;
+
+  /// Stream of seekable state.
+  Stream<bool> get onSeekable => _seekableController.stream;
 
   /// Stream of player completions.
   ///
@@ -697,6 +703,8 @@ class AudioPlayer {
         player._positionController.add(newDuration);
         // ignore: deprecated_member_use_from_same_package
         player.positionHandler?.call(newDuration);
+      case 'audio.onSeekable':
+        player._seekableController.add(value);
         break;
       case 'audio.onComplete':
         player.state = AudioPlayerState.COMPLETED;
@@ -754,6 +762,7 @@ class AudioPlayer {
       futures.add(_notificationPlayerStateController.close());
     if (!_positionController.isClosed) futures.add(_positionController.close());
     if (!_durationController.isClosed) futures.add(_durationController.close());
+    if (!_seekableController.isClosed) futures.add(_seekableController.close());
     if (!_completionController.isClosed)
       futures.add(_completionController.close());
     if (!_seekCompleteController.isClosed)
