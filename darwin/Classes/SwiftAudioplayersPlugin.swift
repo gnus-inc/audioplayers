@@ -289,8 +289,9 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
         channel.invokeMethod("audio.onComplete", arguments: ["playerId": playerId])
     }
     
-    func onCurrentPosition(playerId: String, millis: Int) {
-        channel.invokeMethod("audio.onCurrentPosition", arguments: ["playerId": playerId, "value": millis])
+    func onCurrentPosition(playerId: String, millis: Int, liveStreamTimestamp: Int?) {
+        let value = ["position": millis, "liveStreamTimestamp": liveStreamTimestamp]
+        channel.invokeMethod("audio.onCurrentPosition", arguments: ["playerId": playerId, "value": value])
     }
     
     func onError(playerId: String) {

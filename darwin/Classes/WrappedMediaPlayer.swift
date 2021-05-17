@@ -83,18 +83,6 @@ class WrappedMediaPlayer {
         return player.currentTime()
     }
     
-    func getCurrentPosition() -> Int? {
-        if let baseTime = baseTime,
-           let position = getLiveStreamProgramDateTime() {
-            return Int(position * 1000) - baseTime * 1000
-        }
-
-        guard let time = getCurrentCMTime() else {
-            return nil
-        }
-        return fromCMTime(time: time)
-    }
-    
     func pause() {
         isPlaying = false
         player?.pause()
@@ -171,7 +159,7 @@ class WrappedMediaPlayer {
     
     func stop() {
         pause()
-//        seek(time: toCMTime(millis: 0))
+        player?.replaceCurrentItem(with: nil)
     }
     
     func release() {
@@ -195,15 +183,36 @@ class WrappedMediaPlayer {
         reference.notificationsHandler?.onNotificationBackgroundPlayerStateChanged(playerId: playerId, value: "completed")
     }
     
+    func getCurrentPosition() -> Int? {
+      guard let player = player else {
+          return nil
+      }
+
+      if let baseTime = baseTime,
+         let position = getLiveStreamProgramDateTime() {
+          let liveStreamTimestamp = Int(position * 1000)
+          return liveStreamTimestamp - baseTime * 1000
+      }
+
+      let time = player.currentTime()
+      if let elapsedTime = elapsedTime {
+        return fromCMTime(time: time) + fromCMTime(time: elapsedTime)
+      }
+
+      return fromCMTime(time: time)
+    }
+
     func onTimeInterval(time: CMTime) {
         if reference.isDealloc {
             return
         }
 
+        var liveStreamTimestamp: Int?
         let millis = { () -> Int in
             if let baseTime = baseTime,
                let position = getLiveStreamProgramDateTime() {
-                return Int(position * 1000) - baseTime * 1000
+                liveStreamTimestamp = Int(position * 1000)
+                return liveStreamTimestamp! - baseTime * 1000
             }
             if let elapsedTime = elapsedTime {
               return fromCMTime(time: time) + fromCMTime(time: elapsedTime)
@@ -211,7 +220,7 @@ class WrappedMediaPlayer {
             return fromCMTime(time: time)
         }()
 
-        reference.onCurrentPosition(playerId: playerId, millis: millis)
+        reference.onCurrentPosition(playerId: playerId, millis: millis, liveStreamTimestamp: liveStreamTimestamp)
     }
 
     // Read current playback timestamp based on #EXT-X-PROGRAM-DATE-TIME value in HC-AAC stream.
@@ -257,13 +266,14 @@ class WrappedMediaPlayer {
             if #available(iOS 10.0, *) {
                 if let bufferSeconds = bufferSeconds {
                     playerItem.preferredForwardBufferDuration = Double(bufferSeconds)
-
                 }
             }
             if #available(iOS 13.0, *) {
-                if let timeOffsetFromLive = timeOffsetFromLive {
-                    playerItem.configuredTimeOffsetFromLive = timeOffsetFromLive
-                }
+              if let timeOffsetFromLive = timeOffsetFromLive {
+                  playerItem.configuredTimeOffsetFromLive = timeOffsetFromLive
+              } else {
+                  playerItem.configuredTimeOffsetFromLive = CMTime.positiveInfinity
+              }
             }
             if #available(iOS 9.0, *) {
                 playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = followLiveWhilePaused
