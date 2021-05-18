@@ -294,8 +294,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
         channel.invokeMethod("audio.onCurrentPosition", arguments: ["playerId": playerId, "value": value])
     }
     
-    func onError(playerId: String) {
-        channel.invokeMethod("audio.onError", arguments: ["playerId": playerId, "value": "AVPlayerItem.Status.failed"])
+    func onError(playerId: String, error: String) {
+        channel.invokeMethod("audio.onError", arguments: ["playerId": playerId, "value": error])
     }
     
     func onDuration(playerId: String, millis: Int) {

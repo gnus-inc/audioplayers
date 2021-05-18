@@ -11,7 +11,9 @@ class WrappedMediaPlayer {
     var player: AVPlayer?
     
     var observers: [TimeObserver]
-    var keyVakueObservation: NSKeyValueObservation?
+    var statusObservation: NSKeyValueObservation?
+    var bufferEmptyObservation: NSKeyValueObservation?
+    var stallTimer: Timer?
 
     var isPlaying: Bool
     var playbackRate: Float
@@ -50,8 +52,7 @@ class WrappedMediaPlayer {
         self.playerId = playerId
         self.player = player
         self.observers = observers
-        self.keyVakueObservation = nil
-        
+
         self.isPlaying = isPlaying
         self.playbackRate = playbackRate
         self.volume = volume
@@ -333,7 +334,7 @@ class WrappedMediaPlayer {
             self.onReady = onReady
             self.baseTime = baseTime
             self.elapsedTime = elapsedTime
-            let newKeyValueObservation = playerItem.observe(\AVPlayerItem.status) { (playerItem, change) in
+            let statusObservation = playerItem.observe(\AVPlayerItem.status) { (playerItem, change) in
                 let status = playerItem.status
                 log("player status: %@ change: %@", status, change)
                 
@@ -354,12 +355,24 @@ class WrappedMediaPlayer {
                         onReady(self.player!)
                     }
                 } else if status == .failed {
-                    self.reference.onError(playerId: self.playerId)
+                    self.reference.onError(playerId: self.playerId, error: "AVPlayerItem.Status.failed")
                 }
             }
             
-            keyVakueObservation?.invalidate()
-            keyVakueObservation = newKeyValueObservation
+            self.statusObservation?.invalidate()
+            self.statusObservation = statusObservation
+
+            let bufferEmptyObservation = playerItem.observe(\AVPlayerItem.isPlaybackBufferEmpty) { (playerItem, change) in
+              if playerItem.isPlaybackBufferEmpty {
+                self.stallTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
+                  self.reference.onError(playerId: self.playerId, error: "AVPlayerItem.isPlaybackBufferEmpty")
+                }
+              } else {
+                self.stallTimer?.invalidate()
+              }
+            }
+            self.bufferEmptyObservation?.invalidate()
+            self.bufferEmptyObservation = bufferEmptyObservation
         } else {
             self.baseTime = baseTime
             self.elapsedTime = elapsedTime
