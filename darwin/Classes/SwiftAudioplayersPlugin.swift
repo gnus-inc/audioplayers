@@ -142,6 +142,9 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let elapsedTime = (args["elapsedTime"] as? Float).map { toCMTime(millis: $0) }
             let timeOffsetFromLive = (args["timeOffsetFromLive"] as? Float).map { toCMTime(sec: $0) }
 
+            if method == "setUrl" && player.isPlaying {
+                player.pause()
+            }
             player.setUrl(
                 url: url,
                 isLocal: isLocal,
