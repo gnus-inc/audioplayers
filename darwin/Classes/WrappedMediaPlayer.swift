@@ -24,6 +24,14 @@ class WrappedMediaPlayer {
     var baseTime: Int? // timestamp in seconds
     var elapsedTime: CMTime?
 
+    // (liveStreamChunkDuration is a special purpose variable and should be removed
+    //  when all of HLS playlist contain DATETIME tag.)
+    // At the writing time Wowza stream does not contain DATETIME tag and also
+    // the length of a playlist is fixed by the server side.
+    // To calculate the current playback position under this circumastance, we use
+    // the chunk length of the playlist of the first loading.
+    var liveStreamChunkDuration: CMTime?
+
     init(
         reference: SwiftAudioplayersPlugin,
         playerId: String,
@@ -196,7 +204,11 @@ class WrappedMediaPlayer {
 
       let time = player.currentTime()
       if let elapsedTime = elapsedTime {
-        return fromCMTime(time: time) + fromCMTime(time: elapsedTime)
+          var millis = fromCMTime(time: time) + fromCMTime(time: elapsedTime)
+          if let liveStreamChunkDuration = liveStreamChunkDuration {
+              millis -= fromCMTime(time: liveStreamChunkDuration)
+          }
+          return millis
       }
 
       return fromCMTime(time: time)
@@ -214,8 +226,13 @@ class WrappedMediaPlayer {
                 liveStreamTimestamp = Int(position * 1000)
                 return liveStreamTimestamp! - baseTime * 1000
             }
+
             if let elapsedTime = elapsedTime {
-              return fromCMTime(time: time) + fromCMTime(time: elapsedTime)
+              var millis = fromCMTime(time: time) + fromCMTime(time: elapsedTime)
+                if let liveStreamChunkDuration = liveStreamChunkDuration {
+                    millis -= fromCMTime(time: liveStreamChunkDuration)
+                }
+                return millis
             }
             return fromCMTime(time: time)
         }()
@@ -329,6 +346,11 @@ class WrappedMediaPlayer {
                     let isLiveStream = CMTIME_IS_INDEFINITE(playerItem.duration)
                     self.reference.onSeekable(playerId: self.playerId, seekable: !isLiveStream)
 
+                    if !playerItem.seekableTimeRanges.isEmpty && self.getLiveStreamProgramDateTime() == nil {
+                        self.liveStreamChunkDuration = playerItem.seekableTimeRanges.last!.timeRangeValue.duration
+                    } else {
+                        self.liveStreamChunkDuration = nil
+                    }
                     self.updateDuration()
                     
                     if let onReady = self.onReady {
