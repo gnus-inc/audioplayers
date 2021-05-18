@@ -280,29 +280,25 @@ class WrappedMediaPlayer {
             let parsedUrl = isLocal ? URL.init(fileURLWithPath: url) : URL.init(string: url)!
             let playerItem = AVPlayerItem.init(url: parsedUrl)
             playerItem.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.timeDomain
-            if #available(iOS 10.0, *) {
-                if let bufferSeconds = bufferSeconds {
-                    playerItem.preferredForwardBufferDuration = Double(bufferSeconds)
-                }
+
+            if let bufferSeconds = bufferSeconds {
+                playerItem.preferredForwardBufferDuration = Double(bufferSeconds)
             }
-            if #available(iOS 13.0, *) {
-              if let timeOffsetFromLive = timeOffsetFromLive {
-                  playerItem.configuredTimeOffsetFromLive = timeOffsetFromLive
-              } else {
-                  playerItem.configuredTimeOffsetFromLive = CMTime.positiveInfinity
-              }
+            if let timeOffsetFromLive = timeOffsetFromLive {
+                playerItem.configuredTimeOffsetFromLive = timeOffsetFromLive
+            } else {
+                playerItem.configuredTimeOffsetFromLive = CMTime.positiveInfinity
             }
-            if #available(iOS 9.0, *) {
-                playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = followLiveWhilePaused
-            }
+            playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = followLiveWhilePaused
 
             if let time = time {
-              playerItem.seek(to: time)
+              playerItem.seek(to: time, completionHandler: nil)
             }
 
             let player: AVPlayer
             if let existingPlayer = self.player {
-                keyVakueObservation?.invalidate()
+                statusObservation?.invalidate()
+                bufferEmptyObservation?.invalidate()
                 self.url = url
                 clearObservers()
                 existingPlayer.replaceCurrentItem(with: playerItem)
