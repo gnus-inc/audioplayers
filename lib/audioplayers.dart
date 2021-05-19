@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 typedef StreamController CreateStreamController();
 typedef void TimeChangeHandler(Duration duration);
+typedef void PositionChangeHandler(AudioPosition position);
 typedef void SeekHandler(bool finished);
 typedef void ErrorHandler(String message);
 typedef void AudioPlayerStateChangeHandler(AudioPlayerState state);
@@ -136,6 +137,17 @@ void _backgroundCallbackDispatcher() {
   });
 }
 
+class AudioPosition {
+  AudioPosition(this.position, this.liveStreamTime);
+
+  final Duration position;
+  final DateTime liveStreamTime;
+
+  @override
+  String toString() => 'AudioPosition(position: $position, '
+      'liveStreamTime: $liveStreamTime)';
+}
+
 /// This represents a single AudioPlayer, which can play one audio at a time.
 /// To play several audios at the same time, you must create several instances
 /// of this class.
@@ -155,11 +167,14 @@ class AudioPlayer {
   final StreamController<AudioPlayerState> _notificationPlayerStateController =
       StreamController<AudioPlayerState>.broadcast();
 
-  final StreamController<Duration> _positionController =
-      StreamController<Duration>.broadcast();
+  final StreamController<AudioPosition> _positionController =
+      StreamController<AudioPosition>.broadcast();
 
   final StreamController<Duration> _durationController =
       StreamController<Duration>.broadcast();
+
+  final StreamController<bool> _seekableController =
+      StreamController<bool>.broadcast();
 
   final StreamController<void> _completionController =
       StreamController<void>.broadcast();
@@ -218,13 +233,17 @@ class AudioPlayer {
   /// position of the playback if the status is [AudioPlayerState.PLAYING].
   ///
   /// You can use it on a progress bar, for instance.
-  Stream<Duration> get onAudioPositionChanged => _positionController.stream;
+  Stream<AudioPosition> get onAudioPositionChanged =>
+      _positionController.stream;
 
   /// Stream of changes on audio duration.
   ///
   /// An event is going to be sent as soon as the audio duration is available
   /// (it might take a while to download or buffer it).
   Stream<Duration> get onDurationChanged => _durationController.stream;
+
+  /// Stream of seekable state.
+  Stream<bool> get onSeekable => _seekableController.stream;
 
   /// Stream of player completions.
   ///
@@ -262,7 +281,7 @@ class AudioPlayer {
   ///
   /// This is deprecated. Use [onAudioPositionChanged] instead.
   @deprecated
-  TimeChangeHandler positionHandler;
+  PositionChangeHandler positionHandler;
 
   /// Handler of changes on audio duration.
   ///
@@ -397,29 +416,33 @@ class AudioPlayer {
     bool stayAwake = false,
     bool duckAudio = false,
     bool recordingActive = false,
-    int bufferSeconds,
+    DateTime baseTime,
+    Duration elapsedTime,
+    Duration timeOffsetFromLive,
+    Duration buffer,
     bool followLiveWhilePaused,
     bool waitForBufferFull,
-    int timeOffsetFromLive,
   }) async {
     isLocal ??= isLocalUrl(url);
-    volume ??= 1.0;
-    respectSilence ??= false;
-    stayAwake ??= false;
 
     final int result = await _invokeMethod('play', {
       'url': url,
       'isLocal': isLocal,
-      'volume': volume,
+      'volume': volume ?? 1.0,
       'position': position?.inMilliseconds,
       'respectSilence': respectSilence ?? false,
       'stayAwake': stayAwake ?? false,
       'duckAudio': duckAudio ?? false,
       'recordingActive': recordingActive ?? false,
-      'bufferSeconds': bufferSeconds,
+      'baseTime':
+          baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000,
+      'elapsedTime': elapsedTime?.inMilliseconds,
+      'timeOffsetFromLive': timeOffsetFromLive == null
+          ? null
+          : timeOffsetFromLive.inMilliseconds / 1000,
+      'bufferSeconds': buffer?.inSeconds,
       'followLiveWhilePaused': followLiveWhilePaused,
       'waitForBufferFull': waitForBufferFull,
-      'timeOffsetFromLive': timeOffsetFromLive,
     });
 
     if (result == 1) {
@@ -427,6 +450,17 @@ class AudioPlayer {
     }
 
     return result;
+  }
+
+  Future<void> updateLiveStreamInfo({
+    DateTime baseTime,
+    Duration elapsedTime,
+  }) async {
+    await _invokeMethod('updateLiveStreamInfo', {
+      'baseTime':
+          baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000,
+      'elapsedTime': elapsedTime?.inMilliseconds
+    });
   }
 
   /// Plays audio in the form of a byte array.
@@ -526,7 +560,6 @@ class AudioPlayer {
 
   /// Moves the cursor to the desired position.
   Future<int> seek(Duration position) {
-    _positionController.add(position);
     return _invokeMethod('seek', {'position': position.inMilliseconds});
   }
 
@@ -598,12 +631,17 @@ class AudioPlayer {
   /// this method.
   ///
   /// respectSilence is not implemented on macOS.
-  Future<int> setUrl(String url,
-      {bool isLocal: false,
-      Duration position,
-      bool respectSilence = false,
-      bool recordingActive = false,
-      int bufferSeconds}) {
+  Future<int> setUrl(
+    String url, {
+    bool isLocal: false,
+    Duration position,
+    bool respectSilence = false,
+    bool recordingActive = false,
+    DateTime baseTime,
+    Duration elapsedTime,
+    Duration timeOffsetFromLive,
+    Duration buffer,
+  }) {
     isLocal = isLocalUrl(url);
     return _invokeMethod('setUrl', {
       'url': url,
@@ -611,7 +649,13 @@ class AudioPlayer {
       'position': position?.inMilliseconds,
       'respectSilence': respectSilence ?? false,
       'recordingActive': recordingActive ?? false,
-      'bufferSeconds': bufferSeconds,
+      'baseTime':
+          baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000,
+      'elapsedTime': elapsedTime?.inMilliseconds,
+      'timeOffsetFromLive': timeOffsetFromLive == null
+          ? null
+          : timeOffsetFromLive.inMilliseconds / 1000,
+      'bufferSeconds': buffer?.inSeconds,
     });
   }
 
@@ -668,10 +712,17 @@ class AudioPlayer {
         player.durationHandler?.call(newDuration);
         break;
       case 'audio.onCurrentPosition':
-        Duration newDuration = Duration(milliseconds: value);
-        player._positionController.add(newDuration);
+        Duration newPosition = Duration(milliseconds: value['position']);
+        DateTime liveStreamTime = value['liveStreamTimestamp'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(value['liveStreamTimestamp']);
+        final audioPosition = AudioPosition(newPosition, liveStreamTime);
+        player._positionController.add(audioPosition);
         // ignore: deprecated_member_use_from_same_package
-        player.positionHandler?.call(newDuration);
+        player.positionHandler?.call(audioPosition);
+        break;
+      case 'audio.onSeekable':
+        player._seekableController.add(value);
         break;
       case 'audio.onComplete':
         player.state = AudioPlayerState.COMPLETED;
@@ -729,6 +780,7 @@ class AudioPlayer {
       futures.add(_notificationPlayerStateController.close());
     if (!_positionController.isClosed) futures.add(_positionController.close());
     if (!_durationController.isClosed) futures.add(_durationController.close());
+    if (!_seekableController.isClosed) futures.add(_seekableController.close());
     if (!_completionController.isClosed)
       futures.add(_completionController.close());
     if (!_seekCompleteController.isClosed)
