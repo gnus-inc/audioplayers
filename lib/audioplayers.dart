@@ -174,7 +174,7 @@ class AudioPlayer {
       StreamController<Duration>.broadcast();
 
   final StreamController<bool> _seekableController =
-    StreamController<bool>.broadcast();
+      StreamController<bool>.broadcast();
 
   final StreamController<void> _completionController =
       StreamController<void>.broadcast();
@@ -233,7 +233,8 @@ class AudioPlayer {
   /// position of the playback if the status is [AudioPlayerState.PLAYING].
   ///
   /// You can use it on a progress bar, for instance.
-  Stream<AudioPosition> get onAudioPositionChanged => _positionController.stream;
+  Stream<AudioPosition> get onAudioPositionChanged =>
+      _positionController.stream;
 
   /// Stream of changes on audio duration.
   ///
@@ -433,8 +434,8 @@ class AudioPlayer {
       'stayAwake': stayAwake ?? false,
       'duckAudio': duckAudio ?? false,
       'recordingActive': recordingActive ?? false,
-      'baseTime': baseTime == null ? null : baseTime.millisecondsSinceEpoch /
-          1000,
+      'baseTime':
+          baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000,
       'elapsedTime': elapsedTime?.inMilliseconds,
       'timeOffsetFromLive': timeOffsetFromLive == null
           ? null
@@ -456,8 +457,8 @@ class AudioPlayer {
     Duration elapsedTime,
   }) async {
     await _invokeMethod('updateLiveStreamInfo', {
-      'baseTime': baseTime == null ? null : baseTime.millisecondsSinceEpoch /
-          1000,
+      'baseTime':
+          baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000,
       'elapsedTime': elapsedTime?.inMilliseconds
     });
   }
@@ -630,16 +631,17 @@ class AudioPlayer {
   /// this method.
   ///
   /// respectSilence is not implemented on macOS.
-  Future<int> setUrl(String url,
-      {bool isLocal: false,
-      Duration position,
-      bool respectSilence = false,
-      bool recordingActive = false,
-      DateTime baseTime,
-      Duration elapsedTime,
-      Duration timeOffsetFromLive,
-      Duration buffer,
-      }) {
+  Future<int> setUrl(
+    String url, {
+    bool isLocal: false,
+    Duration position,
+    bool respectSilence = false,
+    bool recordingActive = false,
+    DateTime baseTime,
+    Duration elapsedTime,
+    Duration timeOffsetFromLive,
+    Duration buffer,
+  }) {
     isLocal = isLocalUrl(url);
     return _invokeMethod('setUrl', {
       'url': url,
@@ -647,8 +649,8 @@ class AudioPlayer {
       'position': position?.inMilliseconds,
       'respectSilence': respectSilence ?? false,
       'recordingActive': recordingActive ?? false,
-      'baseTime': baseTime == null ? null : baseTime.millisecondsSinceEpoch /
-          1000,
+      'baseTime':
+          baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000,
       'elapsedTime': elapsedTime?.inMilliseconds,
       'timeOffsetFromLive': timeOffsetFromLive == null
           ? null
@@ -712,8 +714,8 @@ class AudioPlayer {
       case 'audio.onCurrentPosition':
         Duration newPosition = Duration(milliseconds: value['position']);
         DateTime liveStreamTime = value['liveStreamTimestamp'] == null
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(value['liveStreamTimestamp']);
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(value['liveStreamTimestamp']);
         final audioPosition = AudioPosition(newPosition, liveStreamTime);
         player._positionController.add(audioPosition);
         // ignore: deprecated_member_use_from_same_package
