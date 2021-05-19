@@ -199,8 +199,8 @@ class _ExampleAppState extends State<ExampleApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        StreamProvider<Duration>.value(
-            initialData: Duration(),
+        StreamProvider<AudioPosition>.value(
+            initialData: AudioPosition(Duration.zero, DateTime.now()),
             value: advancedPlayer.onAudioPositionChanged),
       ],
       child: DefaultTabController(

@@ -173,7 +173,7 @@ class _PlayerWidgetState extends State<PlayerWidget> {
 
     _positionSubscription =
         _audioPlayer.onAudioPositionChanged.listen((p) => setState(() {
-              _position = p;
+              _position = p.position;
             }));
 
     _playerCompleteSubscription =
