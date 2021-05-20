@@ -1,7 +1,7 @@
 import AVKit
 
-private let defaultPlaybackRate: Float = 1.0
-private let defaultVolume: Float = 1.0
+private let defaultPlaybackRate: Double = 1.0
+private let defaultVolume: Double = 1.0
 private let defaultPlayingRoute = "speakers"
 
 class WrappedMediaPlayer {
@@ -16,8 +16,8 @@ class WrappedMediaPlayer {
     var stallTimer: Timer?
 
     var isPlaying: Bool
-    var playbackRate: Float
-    var volume: Float
+    var playbackRate: Double
+    var volume: Double
     var waitForBufferFull: Bool
     var playingRoute: String
     var looping: Bool
@@ -41,8 +41,8 @@ class WrappedMediaPlayer {
         observers: [TimeObserver] = [],
         
         isPlaying: Bool = false,
-        playbackRate: Float = defaultPlaybackRate,
-        volume: Float = defaultVolume,
+        playbackRate: Double = defaultPlaybackRate,
+        volume: Double = defaultVolume,
         playingRoute: String = defaultPlayingRoute,
         looping: Bool = false,
         url: String? = nil,
@@ -100,7 +100,7 @@ class WrappedMediaPlayer {
     func resume() {
         isPlaying = true
         if #available(iOS 10.0, macOS 10.12, *), !waitForBufferFull {
-            player?.playImmediately(atRate: playbackRate)
+            player?.playImmediately(atRate: Float(playbackRate))
         } else {
             player?.play()
         }
@@ -109,14 +109,14 @@ class WrappedMediaPlayer {
         reference.lastPlayerId = playerId
     }
     
-    func setVolume(volume: Float) {
+    func setVolume(volume: Double) {
         self.volume = volume
-        player?.volume = volume
+        player?.volume = Float(volume)
     }
     
-    func setPlaybackRate(playbackRate: Float) {
+    func setPlaybackRate(playbackRate: Double) {
         self.playbackRate = playbackRate
-        player?.rate = playbackRate
+        player?.rate = Float(playbackRate)
         
         if let currentTime = getCurrentCMTime() {
             reference.updateNotifications(player: self, time: currentTime)
@@ -139,14 +139,14 @@ class WrappedMediaPlayer {
     
     func skipForward(interval: TimeInterval) {
         guard let currentTime = getCurrentCMTime() else {
-            log("Cannot skip forward, unable to determine currentTime")
+            Logger.log("Cannot skip forward, unable to determine currentTime")
             return
         }
         guard let maxDuration = getDurationCMTime() else {
-            log("Cannot skip forward, unable to determine maxDuration")
+            Logger.log("Cannot skip forward, unable to determine maxDuration")
             return
         }
-        let newTime = CMTimeAdd(currentTime, toCMTime(sec: interval))
+        let newTime = CMTimeAdd(currentTime, toCMTime(millis: interval * 1000))
         
         // if CMTime is more than max duration, limit it
         let clampedTime = CMTimeGetSeconds(newTime) > CMTimeGetSeconds(maxDuration) ? maxDuration : newTime
@@ -155,11 +155,11 @@ class WrappedMediaPlayer {
     
     func skipBackward(interval: TimeInterval) {
         guard let currentTime = getCurrentCMTime() else {
-            log("Cannot skip forward, unable to determine currentTime")
+            Logger.log("Cannot skip forward, unable to determine currentTime")
             return
         }
         
-        let newTime = CMTimeSubtract(currentTime, toCMTime(sec: interval))
+        let newTime = CMTimeSubtract(currentTime, toCMTime(millis: interval * 1000))
         // if CMTime is negative, set it to zero
         let clampedTime = CMTimeGetSeconds(newTime) < 0 ? toCMTime(millis: 0) : newTime
         
@@ -278,7 +278,8 @@ class WrappedMediaPlayer {
         self.waitForBufferFull = waitForBufferFull
         
         if self.url != url || playbackStatus == .failed || playbackStatus == nil {
-            let parsedUrl = isLocal ? URL.init(fileURLWithPath: url) : URL.init(string: url)!
+            let parsedUrl = isLocal ? URL.init(fileURLWithPath: url.deletingPrefix("file://")) : URL.init(string: url)!
+
             let playerItem = AVPlayerItem.init(url: parsedUrl)
             playerItem.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.timeDomain
 
@@ -336,7 +337,7 @@ class WrappedMediaPlayer {
             self.elapsedTime = elapsedTime
             let statusObservation = playerItem.observe(\AVPlayerItem.status) { (playerItem, change) in
                 let status = playerItem.status
-                log("player status: %@ change: %@", status, change)
+                Logger.log("player status: %@ change: %@", status, change)
                 
                 // Do something with the status...
                 if status == .readyToPlay {
@@ -387,9 +388,9 @@ class WrappedMediaPlayer {
         }
     }
     
-    func play(volume: Float, time: CMTime?) {
+    func play(volume: Double, time: CMTime?) {
         guard let player = player else { return }
-        player.volume = volume
+        player.volume = Float(volume)
         if let time = time {
           player.seek(to: time)
         }

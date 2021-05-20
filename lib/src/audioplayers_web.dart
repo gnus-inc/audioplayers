@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:html';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+
+import 'api/release_mode.dart';
 
 class WrappedPlayer {
   double? pausedAt;
@@ -14,7 +15,7 @@ class WrappedPlayer {
 
   AudioElement? player;
 
-  void setUrl(String? url) {
+  void setUrl(String url) {
     currentUrl = url;
 
     stop();
@@ -34,8 +35,8 @@ class WrappedPlayer {
       return;
     }
     player = AudioElement(currentUrl);
-    player!.loop = shouldLoop();
-    player!.volume = currentVolume;
+    player?.loop = shouldLoop();
+    player?.volume = currentVolume;
   }
 
   bool shouldLoop() => currentReleaseMode == ReleaseMode.LOOP;
@@ -58,8 +59,8 @@ class WrappedPlayer {
     if (player == null) {
       recreateNode();
     }
-    player!.play();
-    player!.currentTime = position;
+    player?.play();
+    player?.currentTime = position;
   }
 
   void resume() {
@@ -67,7 +68,7 @@ class WrappedPlayer {
   }
 
   void pause() {
-    pausedAt = player!.currentTime as double?;
+    pausedAt = player?.currentTime as double?;
     _cancel();
   }
 
@@ -87,25 +88,25 @@ class WrappedPlayer {
 
 class AudioplayersPlugin {
   // players by playerId
-  Map<String?, WrappedPlayer> players = {};
+  Map<String, WrappedPlayer> players = {};
 
   static void registerWith(Registrar registrar) {
-    final MethodChannel channel = MethodChannel(
+    final channel = MethodChannel(
       'xyz.luan/audioplayers',
       const StandardMethodCodec(),
-      registrar.messenger,
+      registrar,
     );
 
-    final AudioplayersPlugin instance = AudioplayersPlugin();
+    final instance = AudioplayersPlugin();
     channel.setMethodCallHandler(instance.handleMethodCall);
   }
 
-  WrappedPlayer getOrCreatePlayer(String? playerId) {
+  WrappedPlayer getOrCreatePlayer(String playerId) {
     return players.putIfAbsent(playerId, () => WrappedPlayer());
   }
 
-  Future<WrappedPlayer> setUrl(String? playerId, String? url) async {
-    final WrappedPlayer player = getOrCreatePlayer(playerId);
+  Future<WrappedPlayer> setUrl(String playerId, String url) async {
+    final player = getOrCreatePlayer(playerId);
 
     if (player.currentUrl == url) {
       return player;
@@ -115,28 +116,29 @@ class AudioplayersPlugin {
     return player;
   }
 
-  ReleaseMode parseReleaseMode(String? value) {
+  ReleaseMode parseReleaseMode(String value) {
     return ReleaseMode.values.firstWhere((e) => e.toString() == value);
   }
 
   Future<dynamic> handleMethodCall(MethodCall call) async {
     final method = call.method;
-    final playerId = call.arguments['playerId'];
+    final args = call.arguments as Map<dynamic, dynamic>;
+    final playerId = args['playerId'] as String;
     switch (method) {
       case 'setUrl':
         {
-          final String? url = call.arguments['url'];
+          final url = args['url'] as String;
           await setUrl(playerId, url);
           return 1;
         }
       case 'play':
         {
-          final String? url = call.arguments['url'];
+          final url = args['url'] as String;
 
           // TODO(luan) think about isLocal (is it needed or not)
 
-          double volume = call.arguments['volume'] ?? 1.0;
-          final double position = call.arguments['position'] ?? 0;
+          final volume = args['volume'] as double? ?? 1.0;
+          final position = args['position'] as double? ?? 0;
           // web does not care for the `stayAwake` argument
 
           final player = await setUrl(playerId, url);
@@ -162,14 +164,13 @@ class AudioplayersPlugin {
         }
       case 'setVolume':
         {
-          double volume = call.arguments['volume'] ?? 1.0;
+          final volume = args['volume'] as double? ?? 1.0;
           getOrCreatePlayer(playerId).setVolume(volume);
           return 1;
         }
       case 'setReleaseMode':
         {
-          ReleaseMode releaseMode =
-              parseReleaseMode(call.arguments['releaseMode']);
+          final releaseMode = parseReleaseMode(args['releaseMode'] as String);
           getOrCreatePlayer(playerId).setReleaseMode(releaseMode);
           return 1;
         }

@@ -2,7 +2,9 @@
 // Generated file. Do not edit.
 //
 
-import 'package:audioplayers/audioplayers_web.dart';
+// ignore_for_file: lines_longer_than_80_chars
+
+import 'package:audioplayers/web/audioplayers_web.dart';
 
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 

@@ -80,16 +80,16 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
         let method = call.method
         
         guard let args = call.arguments as? [String: Any] else {
-            log("Failed to parse call.arguments from Flutter.")
+            Logger.log("Failed to parse call.arguments from Flutter.")
             result(0)
             return
         }
         guard let playerId = args["playerId"] as? String else {
-            log("Call missing mandatory parameter playerId.")
+            Logger.log("Call missing mandatory parameter playerId.")
             result(0)
             return
         }
-        log("%@ => call %@, playerId %@", OS_NAME, method, playerId)
+        Logger.log("%@ => call %@, playerId %@", OS_NAME, method, playerId)
         
         let player = self.getOrCreatePlayer(playerId: playerId)
         
@@ -99,7 +99,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 return
             }
             if let handleKey = args["handleKey"] {
-                log("calling start headless service %@", handleKey)
+                Logger.log("calling start headless service %@", handleKey)
                 let handle = (handleKey as! [Any])[0]
                 handler.startHeadlessService(handle: (handle as! Int64))
             } else {
@@ -111,7 +111,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 return
             }
             if let handleMonitorKey = args["handleMonitorKey"] {
-                log("calling monitor notification %@", handleMonitorKey)
+                Logger.log("calling monitor notification %@", handleMonitorKey)
                 let handle = (handleMonitorKey as! [Any])[0]
                 handler.updateHandleMonitorKey(handle: handle as! Int64)
             } else {
@@ -119,13 +119,13 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             }
         } else if method == "play" || method == "setUrl" {
             guard let url = args["url"] as! String? else {
-                log("Null url received on \(method)")
+                Logger.log("Null url received on play")
                 result(0)
                 return
             }
             
             let isLocal: Bool = (args["isLocal"] as? Bool) ?? true
-            let volume: Float = (args["volume"] as? Float) ?? 1.0
+            let volume: Double = (args["volume"] as? Double) ?? 1.0
             let bufferSeconds = args["bufferSeconds"] as? Int
 
             let followLiveWhilePaused = (args["isLocal"] as? Bool) ?? false
@@ -140,7 +140,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
 
             let baseTime: Int? = (args["baseTime"] as? Int)
             let elapsedTime = (args["elapsedTime"] as? Float).map { toCMTime(millis: $0) }
-            let timeOffsetFromLive = (args["timeOffsetFromLive"] as? Float).map { toCMTime(sec: $0) }
+            let timeOffsetFromLive = (args["timeOffsetFromLive"] as? Float).map { toCMTime(millis: $0 * 1000) }
 
             if method == "setUrl" && player.isPlaying {
                 player.pause()
@@ -179,7 +179,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 let time = toCMTime(millis: position)
                 player.seek(time: time)
             } else {
-                log("Null position received on seek")
+                Logger.log("Null position received on seek")
                 result(0)
             }
         } else if method == "updateLiveStreamInfo" {
@@ -191,8 +191,8 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let duration = player.getDuration()
             result(duration)
         } else if method == "setVolume" {
-            guard let volume = args["volume"] as? Float else {
-                log("Error calling setVolume, volume cannot be null")
+            guard let volume = args["volume"] as? Double else {
+                Logger.log("Error calling setVolume, volume cannot be null")
                 result(0)
                 return
             }
@@ -202,15 +202,15 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             let currentPosition = player.getCurrentPosition()
             result(currentPosition)
         } else if method == "setPlaybackRate" {
-            guard let playbackRate = args["playbackRate"] as? Float else {
-                log("Error calling setPlaybackRate, playbackRate cannot be null")
+            guard let playbackRate = args["playbackRate"] as? Double else {
+                Logger.log("Error calling setPlaybackRate, playbackRate cannot be null")
                 result(0)
                 return
             }
             player.setPlaybackRate(playbackRate: playbackRate)
         } else if method == "setReleaseMode" {
             guard let releaseMode = args["releaseMode"] as? String else {
-                log("Error calling setReleaseMode, releaseMode cannot be null")
+                Logger.log("Error calling setReleaseMode, releaseMode cannot be null")
                 result(0)
                 return
             }
@@ -218,7 +218,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
             player.looping = looping
         } else if method == "earpieceOrSpeakersToggle" {
             guard let playingRoute = args["playingRoute"] as? String else {
-                log("Error calling earpieceOrSpeakersToggle, playingRoute cannot be null")
+                Logger.log("Error calling earpieceOrSpeakersToggle, playingRoute cannot be null")
                 result(0)
                 return
             }
@@ -228,7 +228,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 result(FlutterMethodNotImplemented)
                 return
             }
-
+            Logger.log("setNotification called")
             let title: String? = args["title"] as? String
             let albumTitle: String? = args["albumTitle"] as? String
             let artist: String? = args["artist"] as? String
@@ -261,7 +261,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
         } else if method == "clearNotification" {
             notificationsHandler?.clearNotificationForIos()
         } else {
-            log("Called not implemented method: %@", method)
+            Logger.log("Called not implemented method: %@", method)
             result(FlutterMethodNotImplemented)
             return
         }
@@ -344,7 +344,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
         let options = isNotification ? AVAudioSession.CategoryOptions.mixWithOthers : []
         
         configureAudioSession(category: category, options: options)
-        if !isNotification {
+        if !isNotification { // Todo investigate whether the flag might be opposite
             UIApplication.shared.beginReceivingRemoteControlEvents()
         }
         #endif
@@ -354,7 +354,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
         let hasPlaying = players.values.contains { player in player.isPlaying }
         if !hasPlaying {
             #if os(iOS)
-            configureAudioSession(active: true)
+            configureAudioSession(active: true) // Todo investigate whether the flag might be opposite
             #endif
         }
     }
@@ -397,7 +397,7 @@ public class SwiftAudioplayersPlugin: NSObject, FlutterPlugin {
                 try session.setActive(active)
             }
         } catch {
-            log("Error configuring audio session: %@", error)
+            Logger.log("Error configuring audio session: %@", error)
         }
     }
     #endif
