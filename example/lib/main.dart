@@ -119,8 +119,8 @@ class _ExampleAppState extends State<ExampleApp> {
           _Btn(
             txt: 'Play',
             onPressed: () async {
-              final bytes = await (await audioCache.loadAsFile('audio.mp3'))
-                  .readAsBytes();
+              // final bytes = await (await audioCache.loadAsFile('audio.mp3'))
+              //     .readAsBytes();
               // audioCache.playBytes(bytes);
             },
           ),
@@ -130,8 +130,8 @@ class _ExampleAppState extends State<ExampleApp> {
           _Btn(
             txt: 'Loop',
             onPressed: () async {
-              final bytes = await (await audioCache.loadAsFile('audio.mp3'))
-                  .readAsBytes();
+              // final bytes = await (await audioCache.loadAsFile('audio.mp3'))
+              //     .readAsBytes();
               // audioCache.playBytes(bytes, loop: true);
             },
           ),

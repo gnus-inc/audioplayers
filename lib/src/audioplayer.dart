@@ -181,25 +181,28 @@ class AudioPlayer {
   }) async {
     isLocal ??= isLocalUrl(url);
 
-    final result = await _invokeMethod('play', <String, dynamic>{
-      'url': url,
-      'isLocal': isLocal,
-      'volume': volume,
-      'position': position?.inMilliseconds,
-      'respectSilence': respectSilence,
-      'stayAwake': stayAwake,
-      'duckAudio': duckAudio,
-      'recordingActive': recordingActive,
-      'baseTime':
-          baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000,
-      'elapsedTime': elapsedTime?.inMilliseconds,
-      'timeOffsetFromLive': timeOffsetFromLive == null
-          ? null
-          : timeOffsetFromLive.inMilliseconds / 1000,
-      'bufferSeconds': buffer?.inSeconds,
-      'followLiveWhilePaused': followLiveWhilePaused,
-      'waitForBufferFull': waitForBufferFull,
-    });
+    final result = await _invokeMethod(
+      'play',
+      <String, dynamic>{
+        'url': url,
+        'isLocal': isLocal,
+        'volume': volume,
+        'position': position?.inMilliseconds,
+        'respectSilence': respectSilence,
+        'stayAwake': stayAwake,
+        'duckAudio': duckAudio,
+        'recordingActive': recordingActive,
+        'baseTime':
+            baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000,
+        'elapsedTime': elapsedTime?.inMilliseconds,
+        'timeOffsetFromLive': timeOffsetFromLive == null
+            ? null
+            : timeOffsetFromLive.inMilliseconds / 1000,
+        'bufferSeconds': buffer?.inSeconds,
+        'followLiveWhilePaused': followLiveWhilePaused,
+        'waitForBufferFull': waitForBufferFull,
+      },
+    );
 
     if (result == 1) {
       state = PlayerState.PLAYING;
@@ -212,11 +215,15 @@ class AudioPlayer {
     DateTime? baseTime,
     Duration? elapsedTime,
   }) async {
-    await _invokeMethod('updateLiveStreamInfo', <String, dynamic>{
-      'baseTime':
-          baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000,
-      'elapsedTime': elapsedTime?.inMilliseconds
-    });
+    final baseTimeMs =
+        baseTime == null ? null : baseTime.millisecondsSinceEpoch / 1000;
+    await _invokeMethod(
+      'updateLiveStreamInfo',
+      <String, dynamic>{
+        'baseTime': baseTimeMs,
+        'elapsedTime': elapsedTime?.inMilliseconds,
+      },
+    );
   }
 
   /// Pauses the audio that is currently playing.
@@ -417,11 +424,15 @@ class AudioPlayer {
         break;
       case 'audio.onCurrentPosition':
         final newPosition =
+            // ignore: avoid_dynamic_calls
             Duration(milliseconds: callArgs['value']['position'] as int);
+        // ignore: avoid_dynamic_calls
         final liveStreamTime = callArgs['value']['liveStreamTimestamp'] == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(
-                callArgs['value']['liveStreamTimestamp'] as int);
+                // ignore: avoid_dynamic_calls
+                callArgs['value']['liveStreamTimestamp'] as int,
+              );
         final audioPosition = AudioPosition(newPosition, liveStreamTime);
         player._positionController.add(audioPosition);
         break;
