@@ -107,7 +107,7 @@ class AudioPlayer {
   Stream<Duration> get onDurationChanged => _durationController.stream;
 
   /// Stream of seekable state.
-  Stream<bool?> get onSeekable => _seekableController.stream;
+  Stream<bool> get onSeekable => _seekableController.stream;
 
   /// Stream of player completions.
   ///
