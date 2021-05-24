@@ -1,12 +1,14 @@
 package xyz.luan.audioplayers
 
+import androidx.annotation.NonNull
+
 import android.content.Context
 import android.os.Handler
 import io.flutter.embedding.engine.plugins.FlutterPlugin
-import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import io.flutter.plugin.common.MethodChannel.Result
 import java.lang.IllegalArgumentException
 import java.lang.ref.WeakReference
 import java.util.logging.Level
@@ -24,15 +26,18 @@ class AudioplayersPlugin : MethodCallHandler, FlutterPlugin {
 
     private var seekFinish = false
 
-    override fun onAttachedToEngine(binding: FlutterPluginBinding) {
+    override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(binding.binaryMessenger, "xyz.luan/audioplayers")
         context = binding.applicationContext
         seekFinish = false
         channel.setMethodCallHandler(this)
     }
 
-    override fun onDetachedFromEngine(binding: FlutterPluginBinding) {}
-    override fun onMethodCall(call: MethodCall, response: MethodChannel.Result) {
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
+    }
+
+    override fun onMethodCall(@NonNull call: MethodCall, response: MethodChannel.Result) {
         try {
             handleMethodCall(call, response)
         } catch (e: Exception) {
