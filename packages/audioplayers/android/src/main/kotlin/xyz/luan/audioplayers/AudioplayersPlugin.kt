@@ -21,6 +21,6 @@ class AudioplayersPlugin : MethodCallHandler, FlutterPlugin {
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, response: MethodChannel.Result) {
-        result.notImplemented()
+        response.notImplemented()
     }
 }
